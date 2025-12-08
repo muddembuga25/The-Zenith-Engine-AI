@@ -1,0 +1,8 @@
+{
+  "name": "Zenith Engine AI",
+  "description": "The Senior AI Content Engineer. Fully automated GEO (Generative Engine Optimization) & SEO on autopilot. Dominate search rankings with hands-free strategy and publishing.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

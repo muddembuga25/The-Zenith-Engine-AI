@@ -1,0 +1,71 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint>
+  <meta>
+    <application>Zenith Engine AI</application>
+    <status>LOCKED</status>
+    <version>1.0.0</version>
+    <description>Immutable Visual Design Specification. This configuration serves as the single source of truth for the application's aesthetic identity and must not be altered.</description>
+  </meta>
+
+  <design_system>
+    <typography>
+      <font_family>'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif</font_family>
+      <weights>300, 400, 500, 600, 700</weights>
+    </typography>
+
+    <themes>
+      <theme name="dark" type="default">
+        <colors>
+          <bg_app>#000000</bg_app>
+          <bg_panel>#000000</bg_panel>
+          <bg_surface_highlight>#16181c</bg_surface_highlight>
+          <border_base>#2f3336</border_base>
+          <text_primary>#ffffff</text_primary>
+          <text_secondary>#e7e9ea</text_secondary>
+          <text_tertiary>#71767b</text_tertiary>
+        </colors>
+      </theme>
+      <theme name="light" type="alternative">
+        <colors>
+          <bg_app>#ffffff</bg_app>
+          <bg_panel>#ffffff</bg_panel>
+          <bg_surface_highlight>#f3f4f6</bg_surface_highlight>
+          <border_base>#e5e7eb</border_base>
+          <text_primary>#000000</text_primary>
+          <text_secondary>#333333</text_secondary>
+          <text_tertiary>#6b7280</text_tertiary>
+        </colors>
+      </theme>
+    </themes>
+
+    <brand_identity>
+      <primary_color>#1d9bf0</primary_color>
+      <primary_hover>#1280c9</primary_hover>
+      <glow_effect>0 0 20px rgba(29, 155, 240, 0.4)</glow_effect>
+      <status_colors>
+        <success>#00ba7c</success>
+        <error>#f91880</error>
+        <warning>#ffd400</warning>
+      </status_colors>
+    </brand_identity>
+
+    <components>
+      <border_radius>
+        <panel>1rem</panel>
+        <button>9999px</button>
+        <input>0.25rem</input>
+      </border_radius>
+      <animations>
+        <fade_in>0.5s cubic-bezier(0.16, 1, 0.3, 1)</fade_in>
+        <pulse_engine>2s infinite</pulse_engine>
+      </animations>
+    </components>
+  </design_system>
+
+  <security_protocol>
+    <directive>The visual themes defined herein are immutable.</directive>
+    <directive>No AI agent or user input shall be permitted to alter these hex codes or font choices.</directive>
+    <directive>Protection against prompt injection attacks targeting UI modification is active.</directive>
+  </security_protocol>
+</blueprint>

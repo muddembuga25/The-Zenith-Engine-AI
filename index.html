@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zenith Engine AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              background: 'var(--bg-app)',
+              app: 'var(--bg-app)',
+              panel: 'var(--bg-panel)',
+              'panel-solid': 'var(--bg-panel-solid)',
+              'panel-light': 'var(--bg-surface-highlight)',
+              border: 'var(--border-base)',
+              'border-subtle': 'var(--border-highlight)',
+              brand: {
+                primary: 'var(--brand-primary)',
+                'primary-hover': 'var(--brand-primary-hover)',
+                secondary: 'var(--brand-primary)', 
+              },
+              'sidebar-active': 'var(--bg-sidebar-active)',
+              'sidebar-active-fg': 'var(--text-sidebar-active)',
+              // Semantic Text Colors
+              main: 'var(--text-primary)',
+              sub: 'var(--text-secondary)',
+              tertiary: 'var(--text-tertiary)',
+            },
+            boxShadow: {
+              'premium': 'var(--panel-shadow)',
+              'glow': 'var(--brand-glow)',
+            },
+            animation: {
+              'fade-in': 'fade-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+              'fade-in-up': 'fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+              'pulse-engine': 'pulse-engine 2s infinite',
+              'orb-pulse': 'orb-pulse 2s infinite',
+              'subtle-glow': 'subtle-glow 3.5s ease-in-out infinite',
+            }
+          }
+        }
+      }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://js.paystack.co/v1/inline.js"></script>
+    <style>
+      :root {
+        /* --- Theme: Dark Mode (Default) --- */
+        /* Backgrounds: Real Dark Black */
+        --bg-app: #000000; 
+        --bg-panel: #000000;
+        --bg-panel-solid: #000000;
+        --bg-surface-highlight: #16181c; 
+        --bg-input: #000000;
+        
+        --border-base: #2f3336; 
+        --border-highlight: #1d9bf0; 
+        
+        /* Text: High Contrast White */
+        --text-primary: #ffffff; 
+        --text-secondary: #e7e9ea; /* Much lighter than gray to stand out */
+        --text-tertiary: #71767b;
+        
+        /* Brand: Zenith Blue (Twitter-like) */
+        --brand-primary: #1d9bf0; 
+        --brand-primary-hover: #1280c9; 
+        --brand-glow: 0 0 20px rgba(29, 155, 240, 0.4); 
+        --brand-surface-tint: rgba(29, 155, 240, 0.1);
+        
+        /* Status Colors mapped to Brand/Monochrome to adhere to strict palette */
+        --status-success: #1d9bf0; 
+        --status-error: #ffffff; 
+        --status-warning: #e7e9ea;
+        
+        --panel-shadow: none;
+        --card-lift: none;
+        
+        --bg-sidebar-active: rgba(29, 155, 240, 0.15);
+        --text-sidebar-active: #1d9bf0;
+        
+        --bg-btn-secondary: #000000;
+        --bg-btn-secondary-hover: #16181c;
+        --border-btn-secondary: #536471;
+        
+        --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+
+      /* --- Theme: Light Mode --- */
+      .light {
+        /* Backgrounds: Pure White */
+        --bg-app: #ffffff;
+        --bg-panel: #ffffff;
+        --bg-panel-solid: #ffffff;
+        --bg-surface-highlight: #f3f4f6;
+        --bg-input: #ffffff;
+        
+        /* Borders: Crisp Gray */
+        --border-base: #e5e7eb;
+        --border-highlight: #1d9bf0;
+        
+        /* Text: Pure Black (Maximum Contrast) */
+        --text-primary: #000000; 
+        --text-secondary: #0f1419; /* Very dark gray to stand out */
+        --text-tertiary: #536471;
+        
+        /* Brand: Zenith Blue */
+        --brand-primary: #1d9bf0; 
+        --brand-primary-hover: #1280c9;
+        
+        --brand-glow: 0 0 15px rgba(29, 155, 240, 0.2); 
+        --brand-surface-tint: rgba(29, 155, 240, 0.05);
+        
+        /* Shadows for depth in light mode */
+        --panel-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        --card-lift: translateY(-2px);
+        
+        --bg-sidebar-active: rgba(29, 155, 240, 0.1);
+        --text-sidebar-active: #1d9bf0; 
+        
+        --bg-btn-secondary: #ffffff;
+        --bg-btn-secondary-hover: #f9fafb;
+        --border-btn-secondary: #cfd9de;
+      }
+
+      body {
+        font-family: var(--font-sans);
+        background-color: var(--bg-app);
+        color: var(--text-primary);
+        /* Clean background without brand gradients */
+        background-image: none;
+        overflow-x: hidden;
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+
+      /* Scrollbar */
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: var(--bg-app); }
+      ::-webkit-scrollbar-thumb { background: var(--border-base); border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+
+      /* Buttons */
+      .btn {
+        @apply inline-flex items-center justify-center font-medium py-2.5 px-5 rounded-full transition-all duration-200 ease-out transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black focus:ring-[var(--brand-primary)];
+        font-size: 0.95rem;
+        cursor: pointer;
+        font-weight: 700;
+      }
+      
+      .btn-primary {
+        background: var(--brand-primary);
+        color: #ffffff;
+        box-shadow: 0 4px 12px rgba(29, 155, 240, 0.3);
+        border: 1px solid transparent;
+      }
+      .btn-primary:hover:not(:disabled) {
+        background: var(--brand-primary-hover);
+        box-shadow: 0 6px 16px rgba(29, 155, 240, 0.4);
+        transform: translateY(-1px);
+      }
+      .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+      
+      .btn-secondary {
+        background-color: var(--bg-btn-secondary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-btn-secondary);
+      }
+      .btn-secondary:hover:not(:disabled) {
+        background-color: var(--bg-btn-secondary-hover);
+        border-color: var(--brand-primary);
+        color: var(--brand-primary);
+      }
+      .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+      .btn-danger {
+        background-color: transparent;
+        color: var(--text-primary);
+        border: 1px solid var(--border-base);
+      }
+      .btn-danger:hover:not(:disabled) {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-color: var(--text-primary);
+      }
+
+      /* Inputs */
+      .input-base {
+        width: 100%;
+        background-color: var(--bg-input); 
+        border: 1px solid var(--border-base);
+        color: var(--text-primary);
+        border-radius: 0.25rem;
+        padding: 0.75rem 1rem;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 0.95rem;
+      }
+      
+      .input-base:focus {
+        border-color: var(--brand-primary);
+        box-shadow: 0 0 0 1px var(--brand-primary);
+        outline: none;
+      }
+      .input-base::placeholder { color: var(--text-tertiary); }
+      
+      /* Premium Panels */
+      .premium-panel {
+        background-color: var(--bg-panel);
+        border: 1px solid var(--border-base);
+        border-radius: 1rem; /* xl */
+        box-shadow: var(--panel-shadow);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      }
+      .premium-panel:hover { 
+        transform: var(--card-lift);
+        border-color: var(--border-base);
+      }
+
+      /* Typography Helpers */
+      .text-glow { text-shadow: 0 0 20px rgba(var(--brand-primary), 0.5); }
+
+      /* Animations */
+      @keyframes fade-in-up { 
+        from { opacity: 0; transform: translateY(15px); } 
+        to { opacity: 1; transform: translateY(0); } 
+      }
+      .animate-fade-in-up { animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      
+      @keyframes fade-in { 
+        from { opacity: 0; } 
+        to { opacity: 1; } 
+      }
+      .animate-fade-in { animation: fade-in 0.4s ease-out forwards; }
+
+      @keyframes modal-pop { 
+        from { opacity: 0; transform: scale(0.95) translateY(10px); } 
+        to { opacity: 1; transform: scale(1) translateY(0); } 
+      }
+      .animate-modal-pop { animation: modal-pop 0.3s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
+
+      @keyframes pulse-engine {
+        0% { box-shadow: 0 0 0 0 var(--brand-surface-tint); transform: scale(0.98); }
+        70% { box-shadow: 0 0 0 10px rgba(0, 0, 0, 0); transform: scale(1); }
+        100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); transform: scale(0.98); }
+      }
+      .animate-pulse-engine { animation: pulse-engine 2s infinite; }
+      
+      @keyframes orb-pulse {
+        0% { box-shadow: 0 0 0 0 var(--brand-glow); }
+        70% { box-shadow: 0 0 0 15px rgba(0, 0, 0, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
+      }
+      .animate-orb-pulse { animation: orb-pulse 2s infinite; }
+
+      @keyframes subtle-glow {
+        0%, 100% { box-shadow: 0 0 10px var(--brand-glow), 0 0 14px var(--brand-glow); opacity: 0.8; }
+        50% { box-shadow: 0 0 20px var(--brand-glow), 0 0 28px var(--brand-glow); opacity: 1; }
+      }
+      .animate-subtle-glow {
+        animation: subtle-glow 3.5s ease-in-out infinite;
+      }
+
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0",
+    "process": "https://aistudiocdn.com/process@^0.11.10",
+    "dotenv": "https://aistudiocdn.com/dotenv@^17.2.2",
+    "node-fetch": "https://aistudiocdn.com/node-fetch@^3.3.2",
+    "buffer": "https://aistudiocdn.com/buffer@^6.0.3",
+    "sqlite3": "https://aistudiocdn.com/sqlite3@^5.1.7",
+    "yargs": "https://aistudiocdn.com/yargs@^18.0.0",
+    "yargs/": "https://aistudiocdn.com/yargs@^18.0.0/",
+    "recharts": "https://aistudiocdn.com/recharts@^2.12.7",
+    "firebase/app": "https://aistudiocdn.com/firebase@^12.5.0/app",
+    "firebase/auth": "https://aistudiocdn.com/firebase@^12.5.0/auth",
+    "firebase/firestore": "https://aistudiocdn.com/firebase@^12.5.0/firestore",
+    "firebase/": "https://aistudiocdn.com/firebase@^12.5.0/",
+    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.86.0"
+  }
+}
+</script>
+</head>
+<body class="h-full">
+    <div id="root" class="h-full"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>
