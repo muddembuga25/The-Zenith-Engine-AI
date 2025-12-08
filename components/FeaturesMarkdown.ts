@@ -1,4 +1,3 @@
-
 export const FeaturesMarkdown = `
 # Zenith Engine AI: Application Features
 

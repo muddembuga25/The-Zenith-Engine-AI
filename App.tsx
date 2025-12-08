@@ -1,6 +1,5 @@
 
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import ReactDOM from 'react-dom/client';
 import { AppStatus, AiProvider, SubscriptionPlan, AutomationWorkflow } from './types';
 import { AVAILABLE_MODELS } from './types';
 import type { BlogPost, Site, RssItem, PostHistoryItem, ApiKeys, SocialMediaPost, SocialMediaSettings, Draft, WhatsAppAccount, TelegramAccount, SocialMediaAccount, StrategicBrief, SeoChecklist, RssSource, GoogleSheetSource, CharacterReference, MailchimpSettings, ModelConfig, GoogleAnalyticsSettings, User, MetaConnection, SupabaseConnection, MetaAsset, SocialAccountStatus, MetaAdsConnection, GoogleAdsConnection, PaystackConnection, PayfastConnection, WiseConnection, LiveBroadcastAutomation, GoogleCalendarConnection, PayoneerConnection, StripeConnection, PayPalConnection } from './types';
@@ -30,7 +29,7 @@ import {
     LogoIcon, CheckCircleIcon, ExclamationTriangleIcon, Cog6ToothIcon, ClockIcon, MenuIcon, XIcon, PenIcon, HomeIcon, 
     ScaleIcon, SparklesIcon, PhotoIcon, VideoCameraIcon, DocumentTextIcon, ShareIcon, LightbulbIcon, LinkIcon, 
     ChartBarIcon, QuestionMarkCircleIcon, SignOutIcon, UserIcon, CreditCardIcon, LockClosedIcon, WordPressIcon, 
-    KeyIcon, BuildingOffice2Icon, SunIcon, MoonIcon, ArrowRightIcon
+    KeyIcon, BuildingOffice2Icon, SunIcon, MoonIcon
 } from './components/Icons';
 import { HistoryDetailViewer } from './components/HistoryDetailViewer';
 import { AutomationDashboard } from './components/AutomationDashboard';
@@ -40,7 +39,6 @@ import { PublishSuccessViewer } from './components/PublishSuccessViewer';
 import { DashboardTab } from './components/DashboardTab';
 import { ContentHubTab } from './components/ContentHubTab';
 import { GlobalAutomationTracker, AutomationJob } from './components/GlobalAutomationTracker';
-import { SimulationWorker } from './components/SimulationWorker';
 import { AssistantUI } from './components/AssistantUI';
 import { AuthorityTab } from './components/AuthorityTab';
 import { ApiManagementTab } from './components/ApiManagementTab';
@@ -71,9 +69,9 @@ const providerDisplayNames: Record<AiProvider, string> = {
 const APP_TITLE = 'Zenith Engine AI';
 
 const planPillClasses: Record<string, string> = {
-    creator: 'bg-brand-primary/10 text-brand-primary border border-brand-primary/60 shadow-[0_0_8px_theme(colors.brand.primary/30)]',
-    pro: 'bg-white/10 text-white border border-white/30 shadow-[0_0_8px_theme(colors.white/20)]',
-    agency: 'bg-brand-primary/20 text-brand-primary border border-brand-primary/80 shadow-[0_0_10px_theme(colors.brand.primary/40)]',
+    creator: 'bg-cyan-400/10 text-cyan-300 border border-cyan-400/60 shadow-[0_0_8px_theme(colors.cyan.400/30)]',
+    pro: 'bg-purple-400/10 text-purple-300 border border-purple-400/60 shadow-[0_0_8px_theme(colors.purple.400/30)]',
+    agency: 'bg-yellow-400/10 text-yellow-300 border border-yellow-400/60 shadow-[0_0_8px_theme(colors.yellow.400/30)]',
 };
 
 interface ActiveComponentProps {
@@ -103,7 +101,7 @@ interface ActiveComponentProps {
     handleResetAllSitesSpend: () => void;
     handleOpenDeleteDialog: () => void;
     handleVerifySocialMediaConnection: (platformId: oauthService.SocialPlatform, accountId: string, accessToken: string) => void;
-    handleVerifyCredentialBasedConnection: (platformId: string, account: any) => void;
+    handleVerifyCredentialBasedConnection: (platformId: 'whatsapp' | 'telegram', account: WhatsAppAccount | TelegramAccount) => void;
     onDiscardDraft: (draftId: string) => void;
     onRefreshAnalytics: () => Promise<void>;
     onRefreshClarityData: () => Promise<void>;
@@ -188,7 +186,6 @@ const ActiveComponent: React.FC<ActiveComponentProps> = ({
                     onRefreshAnalytics={onRefreshAnalytics}
                     onRefreshClarityData={onRefreshClarityData}
                     onRefreshArticle={onRefreshArticle}
-                    planAccess={planAccess}
                 />;
       case 'authority':
         if (!planAccess.canUseAuthority) return <UpgradePlan featureName="The Authority Suite" requiredPlan="Pro" setActiveTab={setActiveTab} />;
@@ -300,7 +297,6 @@ export const App: React.FC = () => {
   const [originalArticleForDiff, setOriginalArticleForDiff] = useState<string | null>(null);
   const [refreshedArticleForDiff, setRefreshedArticleForDiff] = useState<BlogPost | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [isDataLoaded, setIsDataLoaded] = useState(false);
   
   const [isOnboarding, setIsOnboarding] = useState(false);
   const [isTrackerModalOpen, setIsTrackerModalOpen] = useState(false);
@@ -363,7 +359,7 @@ export const App: React.FC = () => {
 
   const automationStatusColor = useMemo(() => {
       if (!isAnyAutomationEnabled) return 'bg-gray-700 border-gray-600'; 
-      return isAnyAutomationReady ? 'bg-brand-primary border-brand-primary' : 'bg-white border-white'; 
+      return isAnyAutomationReady ? 'bg-green-500 border-green-400' : 'bg-yellow-500 border-yellow-400'; 
   }, [isAnyAutomationEnabled, isAnyAutomationReady]);
   
   const trialDaysLeft = useMemo(() => {
@@ -452,8 +448,6 @@ export const App: React.FC = () => {
       }
     } catch (error: any) {
         console.warn("Could not load user data from storage:", error);
-    } finally {
-        setIsDataLoaded(true);
     }
   }, []);
 
@@ -462,9 +456,6 @@ export const App: React.FC = () => {
     if (!user.isAdmin) {
        loadUserData(user).then(() => {
        });
-    } else {
-        // Admin doesn't need to load normal user sites immediately, or handles differently
-        setIsDataLoaded(true);
     }
   }, [loadUserData]);
 
@@ -475,7 +466,6 @@ export const App: React.FC = () => {
     setSelectedSiteId(null);
     setImpersonatingUser(null);
     setIsOnboarding(false);
-    setIsDataLoaded(false);
   }, []);
   
   useEffect(() => {
@@ -487,7 +477,6 @@ export const App: React.FC = () => {
             
             if (user.isAdmin && !impersonatingAdmin) {
                 setIsOnboarding(false);
-                setIsDataLoaded(true);
             } else {
                 await loadUserData(user);
             }
@@ -508,22 +497,19 @@ export const App: React.FC = () => {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     if (!currentUser || currentUser.isAdmin) return;
     
-    // GUARD: Ensure we don't save empty state over existing data during initialization
-    if (!isDataLoaded) return;
-
     if (!isInitialMount.current) {
       setSaveStatus('saving');
     }
 
-    saveTimeoutRef.current = window.setTimeout(() => {
+    saveTimeoutRef.current = window.setTimeout(async () => {
         try {
             if (sites.length > 0) {
-                storageService.saveSites(sites, currentUser);
+                await storageService.saveSites(sites, currentUser);
                 if (selectedSiteId) {
-                    storageService.saveLastSelectedSiteId(currentUser.uid, selectedSiteId);
+                    await storageService.saveLastSelectedSiteId(currentUser.uid, selectedSiteId);
                 }
             } else {
-                storageService.clearAllSitesData(currentUser);
+                await storageService.clearAllSitesData(currentUser);
             }
             
             if (isInitialMount.current) {
@@ -541,7 +527,7 @@ export const App: React.FC = () => {
     }, 1500);
 
     return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); };
-  }, [sites, selectedSiteId, currentUser, isDataLoaded]);
+  }, [sites, selectedSiteId, currentUser]);
 
   const handleAddNewSite = useCallback(() => {
       const defaultTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
@@ -627,19 +613,6 @@ export const App: React.FC = () => {
       setBlogPost(updatedPost);
   };
 
-  const handleIncrementGenerationCount = useCallback(async () => {
-      if (!currentUser) return;
-      const newCount = (currentUser.monthlyGenerations?.count || 0) + 1;
-      const updatedUser = { ...currentUser, monthlyGenerations: { ...currentUser.monthlyGenerations, count: newCount } };
-      
-      setCurrentUser(updatedUser);
-      try {
-        await authService.updateUser(currentUser.email, { monthlyGenerations: updatedUser.monthlyGenerations });
-      } catch (e) {
-          console.error("Failed to update generation count", e);
-      }
-  }, [currentUser]);
-
   const handlePublish = useCallback(async () => {
       if (!blogPost || !selectedSite || !currentGenerationSource) {
           toast.addToast("Could not publish. Critical data is missing.", 'error');
@@ -685,13 +658,6 @@ export const App: React.FC = () => {
   }, [blogPost, selectedSite, sites, currentGenerationSource, reviewingDraft, logApiUsage, toast]);
 
   const generateAndScorePost = useCallback(async (topicToTrack: string, generationSource: 'keyword' | 'rss' | 'video' | 'google_sheet' | 'agency_agent', sourceDetails: any, site: Site) => {
-      // CHECK LIMIT
-      if (!planAccess.canGenerate) {
-          toast.addToast("You have reached your monthly generation limit. Upgrade to create more.", "error");
-          setActiveTab('subscription');
-          return;
-      }
-
       resetGeneration();
       setStatus(AppStatus.GENERATING_STRATEGY);
       setStatusMessage('Discovering high-intent keyword...');
@@ -768,15 +734,12 @@ export const App: React.FC = () => {
           setBlogPost(fullPost);
           setSeoScore({ score, checklist });
           setStatus(AppStatus.READY_TO_PUBLISH);
-          
-          // Increment count here upon successful generation
-          handleIncrementGenerationCount();
 
       } catch (e: any) {
           toast.addToast(e.message, 'error');
           setStatus(AppStatus.ERROR);
       }
-  }, [resetGeneration, logApiUsage, toast, planAccess, handleIncrementGenerationCount]);
+  }, [resetGeneration, logApiUsage, toast]);
 
   const handleReviewDraft = useCallback((draftId: string) => {
       if (!selectedSite) return;
@@ -803,7 +766,7 @@ export const App: React.FC = () => {
       }
   }, [toast]);
 
-  const handleVerifyCredentialBasedConnection = useCallback(async (platformId: string, account: any) => {
+  const handleVerifyCredentialBasedConnection = useCallback(async (platformId: 'whatsapp' | 'telegram', account: WhatsAppAccount | TelegramAccount) => {
       const result = await oauthService.verifyCredentialBasedConnection(platformId, account);
       if (result.success) {
           toast.addToast(result.message, 'success');
@@ -1011,69 +974,8 @@ export const App: React.FC = () => {
       { id: 'settings', label: 'Settings', icon: Cog6ToothIcon },
   ];
 
-  const assistantActions = {
-      onFindNextTopic: () => {
-          if (!selectedSite) return "No site selected.";
-          const list = selectedSite.keywordList || '';
-          const next = list.split('\n').find(k => k.trim() && !k.trim().startsWith('[DONE]'));
-          return next ? next.trim() : "No pending topics found.";
-      },
-      onResearchKeyword: async (keyword: string) => {
-          if (!selectedSite) return "No site selected.";
-          const { suggestions } = await aiService.suggestKeywords(keyword, selectedSite);
-          return suggestions.join(', ');
-      },
-      onBrainstormAndAddTopics: async ({ query, count }: { query: string; count: number }) => {
-          if (!selectedSite) return "No site selected.";
-          const { suggestions } = await aiService.suggestKeywords(query, selectedSite);
-          const newTopics = suggestions.slice(0, count);
-          const newList = selectedSite.keywordList ? `${selectedSite.keywordList}\n${newTopics.join('\n')}` : newTopics.join('\n');
-          handleSiteUpdate('keywordList', newList);
-          return `Added ${newTopics.length} topics: ${newTopics.join(', ')}`;
-      },
-      onGenerateArticle: async (topic: string) => {
-          if (!selectedSite) return "No site selected.";
-          // Trigger generation. We use 'agency_agent' as a generic source for on-demand generation.
-          await generateAndScorePost(topic, 'agency_agent', { value: { topic } }, selectedSite);
-          return `Started generating article for "${topic}". Check the screen for progress.`;
-      },
-      onUpdateSiteField: (field: keyof Site, value: any) => {
-          handleSiteUpdate(field, value);
-          return `Updated ${field} to ${value}.`;
-      },
-      onRunSocialGraphicAutomation: async () => {
-          handleSiteUpdate('isSocialGraphicAutomationEnabled', true);
-          return "Enabled Social Graphic Automation. It will run on the next schedule trigger.";
-      },
-      onRunSocialVideoAutomation: async () => {
-          handleSiteUpdate('isSocialVideoAutomationEnabled', true);
-          return "Enabled Social Video Automation. It will run on the next schedule trigger.";
-      },
-      onNavigateToTab: ({ tab, subTab }: { tab: string; subTab?: string }) => {
-          setActiveTab(tab, subTab);
-          return `Navigated to ${tab} ${subTab ? `(${subTab})` : ''}.`;
-      },
-      onGetAutomationStatus: () => {
-          if (!selectedSite) return "No site selected.";
-          return JSON.stringify({
-              blog: selectedSite.isAutomationEnabled,
-              graphics: selectedSite.isSocialGraphicAutomationEnabled,
-              video: selectedSite.isSocialVideoAutomationEnabled,
-              trigger: selectedSite.automationTrigger
-          });
-      },
-      onUpdateAutomationSetting: ({ settingName, settingValue }: { settingName: keyof Site, settingValue: any }) => {
-          let value = settingValue;
-          if (value === 'true') value = true;
-          if (value === 'false') value = false;
-          handleSiteUpdate(settingName, value);
-          return `Updated ${settingName} to ${value}.`;
-      }
-  };
-
   return (
-    <div className="h-full w-full flex flex-col md:flex-row bg-app text-main transition-colors duration-300 overflow-hidden relative">
-      <SimulationWorker />
+    <div className="h-full w-full flex flex-col md:flex-row bg-app text-main transition-colors duration-300 overflow-hidden">
       
       {/* Mobile Overlay */}
       {isSidebarOpen && (
@@ -1117,7 +1019,7 @@ export const App: React.FC = () => {
                           w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors relative group
                           ${activeTab === item.id 
                               ? 'bg-brand-primary/10 text-brand-primary' 
-                              : 'text-sub hover:text-brand-primary hover:bg-brand-primary/5'
+                              : 'text-sub hover:text-main hover:bg-panel-light'
                           }
                           ${item.mt ? 'mt-6' : ''}
                       `}
@@ -1127,7 +1029,7 @@ export const App: React.FC = () => {
                       )}
                       
                       <div className="relative">
-                          <item.icon className={`h-5 w-5 flex-shrink-0 ${activeTab === item.id ? 'text-brand-primary' : 'text-sub group-hover:text-brand-primary'}`} />
+                          <item.icon className={`h-5 w-5 flex-shrink-0 ${activeTab === item.id ? 'text-brand-primary' : 'text-sub group-hover:text-main'}`} />
                           {item.locked && (
                               <div className="absolute -top-1.5 -right-1.5 bg-panel rounded-full p-0.5 border border-border">
                                   <LockClosedIcon className="h-2.5 w-2.5 text-text-tertiary" />
@@ -1144,24 +1046,19 @@ export const App: React.FC = () => {
 
           {/* Footer / Profile */}
           <div className="p-4 border-t border-border bg-panel-solid">
-              <div 
-                  className="flex items-center gap-3 overflow-hidden cursor-pointer hover:bg-panel-light p-2 -m-2 rounded-lg transition-colors group/profile"
-                  onClick={() => setIsProfileModalOpen(true)}
-                  role="button"
-                  tabIndex={0}
-              >
+              <div className="flex items-center gap-3 overflow-hidden">
                   <div className="h-9 w-9 rounded-full bg-brand-primary/20 flex items-center justify-center text-brand-primary font-semibold flex-shrink-0 border border-brand-primary/30">
                       {currentUser?.firstName?.[0] || currentUser?.email?.[0]?.toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0 opacity-100 md:opacity-0 lg:opacity-100 group-hover/sidebar:opacity-100 transition-opacity duration-300">
-                      <p className="text-sm font-medium text-main truncate group-hover/profile:text-brand-primary transition-colors">
+                      <p className="text-sm font-medium text-main truncate">
                           {currentUser?.firstName || 'User'}
                       </p>
                       <p className="text-xs text-sub truncate">
                           {currentUser?.email}
                       </p>
                   </div>
-                  <div className="flex flex-col gap-1 opacity-100 md:opacity-0 lg:opacity-100 group-hover/sidebar:opacity-100 transition-opacity duration-300" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex flex-col gap-1 opacity-100 md:opacity-0 lg:opacity-100 group-hover/sidebar:opacity-100 transition-opacity duration-300">
                         <button onClick={toggleTheme} className="p-1.5 text-sub hover:text-main hover:bg-panel-light rounded transition-colors" title="Toggle Theme">
                             {theme === 'dark' ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
                         </button>
@@ -1175,21 +1072,6 @@ export const App: React.FC = () => {
                       Impersonating
                   </div>
               )}
-              {hasActiveJobs && (
-                  <button 
-                      onClick={() => setIsTrackerModalOpen(true)}
-                      className="mt-3 w-full flex items-center justify-between px-3 py-2 bg-brand-primary/10 text-brand-primary rounded-lg text-xs font-medium border border-brand-primary/20 hover:bg-brand-primary/20 transition-colors animate-pulse opacity-100 md:opacity-0 lg:opacity-100 group-hover/sidebar:opacity-100 transition-opacity duration-300"
-                  >
-                      <span className="flex items-center gap-2">
-                          <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-primary opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-primary"></span>
-                          </span>
-                          Processing...
-                      </span>
-                      <ArrowRightIcon className="h-3 w-3" />
-                  </button>
-              )}
           </div>
       </aside>
 
@@ -1201,12 +1083,9 @@ export const App: React.FC = () => {
                 <MenuIcon className="h-6 w-6" />
              </button>
              <span className="font-bold text-lg text-main">Zenith Engine</span>
-             <button 
-                onClick={() => setIsProfileModalOpen(true)}
-                className="w-9 h-9 rounded-full bg-brand-primary/20 flex items-center justify-center text-brand-primary text-sm font-semibold border border-brand-primary/30"
-             >
+             <div className="w-9 h-9 rounded-full bg-brand-primary/20 flex items-center justify-center text-brand-primary text-sm font-semibold border border-brand-primary/30">
                 {currentUser?.firstName?.[0] || 'U'}
-             </button>
+             </div>
         </header>
 
         <main ref={mainContentRef} className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth relative">
@@ -1273,33 +1152,6 @@ export const App: React.FC = () => {
             </div>
         </main>
       </div>
-      
-      {/* On-screen Agent - Placed outside main content to handle positioning/stacking context correctly */}
-      {selectedSite && (
-          <AssistantUI site={selectedSite} actions={assistantActions} />
-      )}
-      
-      {/* Global Tracker Overlay */}
-      <GlobalAutomationTracker 
-          isOpen={isTrackerModalOpen} 
-          onClose={() => setIsTrackerModalOpen(false)} 
-          sites={sites} 
-          onActiveJobsChange={setHasActiveJobs} 
-      />
-
-      {/* Profile Modal */}
-      <ProfileModal 
-          isOpen={isProfileModalOpen}
-          onClose={() => setIsProfileModalOpen(false)}
-          currentUser={currentUser}
-          onUserUpdate={(updated) => setCurrentUser(updated)}
-          onSignOut={handleSignOut}
-          planAccess={planAccess}
-          onManageSubscription={() => {
-              setIsProfileModalOpen(false);
-              setActiveTab('subscription');
-          }}
-      />
     </div>
   );
 };

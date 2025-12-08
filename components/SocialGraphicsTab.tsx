@@ -126,7 +126,7 @@ export const SocialGraphicsTab: React.FC<SocialGraphicsTabProps> = ({ site, onSi
                         <label className="block text-sm font-medium text-text-primary mb-2">Aspect Ratio</label>
                         <div className="grid grid-cols-3 gap-3">
                             {aspectRatios.map(ar => (
-                                <button key={ar.value} onClick={() => setAspectRatio(ar.value)} disabled={isLoading} className={`p-3 rounded-lg border-2 flex flex-col items-center justify-center gap-2 transition-colors ${aspectRatio === ar.value ? 'border-brand-primary bg-brand-primary/20' : 'border-border bg-panel hover:border-gray-600'}`}>
+                                <button key={ar.value} onClick={() => setAspectRatio(ar.value)} disabled={isLoading} className={`p-3 rounded-lg border-2 flex flex-col items-center justify-center gap-2 transition-colors ${aspectRatio === ar.value ? 'border-blue-500 bg-blue-900/20' : 'border-border bg-panel hover:border-gray-600'}`}>
                                     {ar.icon && <ar.icon className="h-5 w-5" />}
                                     <span className="text-xs font-semibold">{ar.label}</span>
                                 </button>
@@ -181,7 +181,7 @@ export const SocialGraphicsTab: React.FC<SocialGraphicsTabProps> = ({ site, onSi
                 </div>
                 
                 <div className="bg-panel/50 p-4 rounded-2xl border border-border min-h-[300px]">
-                    <h3 className="text-lg font-bold text-brand-primary">Result</h3>
+                    <h3 className="text-lg font-bold text-blue-300">Result</h3>
                     {isLoading ? (
                         <div className="flex items-center justify-center h-full"><p className="text-text-secondary">Generating graphic & caption...</p></div>
                     ) : result ? (

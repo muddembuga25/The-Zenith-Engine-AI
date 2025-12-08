@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" class="h-full">
 <head>
@@ -51,37 +52,34 @@
     <script src="https://js.paystack.co/v1/inline.js"></script>
     <style>
       :root {
-        /* --- Theme: Dark Mode (Default) --- */
-        /* Backgrounds: Real Dark Black */
-        --bg-app: #000000; 
-        --bg-panel: #000000;
+        /* --- Theme: X.com Inspired Dark Mode (Default) --- */
+        --bg-app: #000000; /* Pure Black */
+        --bg-panel: #000000; /* Pure Black */
         --bg-panel-solid: #000000;
-        --bg-surface-highlight: #16181c; 
+        --bg-surface-highlight: #16181c; /* Subtle hover highlight */
         --bg-input: #000000;
         
-        --border-base: #2f3336; 
-        --border-highlight: #1d9bf0; 
+        --border-base: #2f3336; /* Dark gray border */
+        --border-highlight: #1d9bf0; /* Brand Blue */
         
-        /* Text: High Contrast White */
-        --text-primary: #ffffff; 
-        --text-secondary: #e7e9ea; /* Much lighter than gray to stand out */
-        --text-tertiary: #71767b;
+        --text-primary: #e7e9ea; /* Off-white */
+        --text-secondary: #71767b; /* Gray */
+        --text-tertiary: #536471;
         
-        /* Brand: Zenith Blue (Twitter-like) */
+        /* Brand - X Blue */
         --brand-primary: #1d9bf0; 
-        --brand-primary-hover: #1280c9; 
-        --brand-glow: 0 0 20px rgba(29, 155, 240, 0.4); 
+        --brand-primary-hover: #1a8cd8; 
+        --brand-glow: 0 0 20px rgba(29, 155, 240, 0.15); 
         --brand-surface-tint: rgba(29, 155, 240, 0.1);
         
-        /* Status Colors mapped to Brand/Monochrome to adhere to strict palette */
-        --status-success: #1d9bf0; 
-        --status-error: #ffffff; 
-        --status-warning: #e7e9ea;
+        --status-success: #00ba7c; 
+        --status-error: #f91880; 
+        --status-warning: #ffd400;
         
-        --panel-shadow: none;
+        --panel-shadow: none; /* Flat design */
         --card-lift: none;
         
-        --bg-sidebar-active: rgba(29, 155, 240, 0.15);
+        --bg-sidebar-active: rgba(29, 155, 240, 0.1);
         --text-sidebar-active: #1d9bf0;
         
         --bg-btn-secondary: #000000;
@@ -91,40 +89,31 @@
         --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       }
 
-      /* --- Theme: Light Mode --- */
+      /* --- Theme: Premium Light Mode --- */
       .light {
-        /* Backgrounds: Pure White */
         --bg-app: #ffffff;
         --bg-panel: #ffffff;
         --bg-panel-solid: #ffffff;
-        --bg-surface-highlight: #f3f4f6;
+        --bg-surface-highlight: #f7f9f9;
         --bg-input: #ffffff;
         
-        /* Borders: Crisp Gray */
-        --border-base: #e5e7eb;
-        --border-highlight: #1d9bf0;
+        --border-base: #eff3f4;
+        --border-highlight: #cfd9de;
         
-        /* Text: Pure Black (Maximum Contrast) */
-        --text-primary: #000000; 
-        --text-secondary: #0f1419; /* Very dark gray to stand out */
+        --text-primary: #0f1419;
+        --text-secondary: #536471;
         --text-tertiary: #536471;
         
-        /* Brand: Zenith Blue */
-        --brand-primary: #1d9bf0; 
-        --brand-primary-hover: #1280c9;
+        --brand-glow: 0 0 20px rgba(29, 155, 240, 0.1); 
+        --brand-surface-tint: rgba(29, 155, 240, 0.03);
         
-        --brand-glow: 0 0 15px rgba(29, 155, 240, 0.2); 
-        --brand-surface-tint: rgba(29, 155, 240, 0.05);
-        
-        /* Shadows for depth in light mode */
-        --panel-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        --card-lift: translateY(-2px);
+        --panel-shadow: 0 2px 4px rgba(0,0,0,0.05);
         
         --bg-sidebar-active: rgba(29, 155, 240, 0.1);
         --text-sidebar-active: #1d9bf0; 
         
         --bg-btn-secondary: #ffffff;
-        --bg-btn-secondary-hover: #f9fafb;
+        --bg-btn-secondary-hover: #f7f9f9;
         --border-btn-secondary: #cfd9de;
       }
 
@@ -155,12 +144,12 @@
       .btn-primary {
         background: var(--brand-primary);
         color: #ffffff;
-        box-shadow: 0 4px 12px rgba(29, 155, 240, 0.3);
+        box-shadow: 0 4px 12px rgba(29, 155, 240, 0.2);
         border: 1px solid transparent;
       }
       .btn-primary:hover:not(:disabled) {
         background: var(--brand-primary-hover);
-        box-shadow: 0 6px 16px rgba(29, 155, 240, 0.4);
+        box-shadow: 0 6px 16px rgba(29, 155, 240, 0.3);
         transform: translateY(-1px);
       }
       .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
@@ -172,19 +161,17 @@
       }
       .btn-secondary:hover:not(:disabled) {
         background-color: var(--bg-btn-secondary-hover);
-        border-color: var(--brand-primary);
-        color: var(--brand-primary);
+        border-color: var(--border-highlight);
       }
       .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
 
       .btn-danger {
         background-color: transparent;
-        color: var(--text-primary);
-        border: 1px solid var(--border-base);
+        color: var(--status-error);
+        border: 1px solid var(--status-error);
       }
       .btn-danger:hover:not(:disabled) {
-        background-color: rgba(255, 255, 255, 0.1);
-        border-color: var(--text-primary);
+        background-color: rgba(249, 24, 128, 0.1);
       }
 
       /* Inputs */
@@ -220,7 +207,7 @@
       }
 
       /* Typography Helpers */
-      .text-glow { text-shadow: 0 0 20px rgba(var(--brand-primary), 0.5); }
+      .text-glow { text-shadow: 0 0 20px rgba(29, 155, 240, 0.5); }
 
       /* Animations */
       @keyframes fade-in-up { 
@@ -243,8 +230,8 @@
 
       @keyframes pulse-engine {
         0% { box-shadow: 0 0 0 0 var(--brand-surface-tint); transform: scale(0.98); }
-        70% { box-shadow: 0 0 0 10px rgba(0, 0, 0, 0); transform: scale(1); }
-        100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); transform: scale(0.98); }
+        70% { box-shadow: 0 0 0 10px rgba(29, 155, 240, 0); transform: scale(1); }
+        100% { box-shadow: 0 0 0 0 rgba(29, 155, 240, 0); transform: scale(0.98); }
       }
       .animate-pulse-engine { animation: pulse-engine 2s infinite; }
       
@@ -267,14 +254,23 @@
 <script type="importmap">
 {
   "imports": {
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.2",
-    "react/": "https://aistudiocdn.com/react@^19.2.1/",
-    "react": "https://aistudiocdn.com/react@^19.2.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
-    "vite": "https://aistudiocdn.com/vite@^7.2.7",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
-    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.87.0",
-    "recharts": "https://aistudiocdn.com/recharts@^3.5.1"
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0",
+    "process": "https://aistudiocdn.com/process@^0.11.10",
+    "dotenv": "https://aistudiocdn.com/dotenv@^17.2.2",
+    "node-fetch": "https://aistudiocdn.com/node-fetch@^3.3.2",
+    "buffer": "https://aistudiocdn.com/buffer@^6.0.3",
+    "sqlite3": "https://aistudiocdn.com/sqlite3@^5.1.7",
+    "yargs": "https://aistudiocdn.com/yargs@^18.0.0",
+    "yargs/": "https://aistudiocdn.com/yargs@^18.0.0/",
+    "recharts": "https://aistudiocdn.com/recharts@^2.12.7",
+    "firebase/app": "https://aistudiocdn.com/firebase@^12.5.0/app",
+    "firebase/auth": "https://aistudiocdn.com/firebase@^12.5.0/auth",
+    "firebase/firestore": "https://aistudiocdn.com/firebase@^12.5.0/firestore",
+    "firebase/": "https://aistudiocdn.com/firebase@^12.5.0/",
+    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.86.0"
   }
 }
 </script>

@@ -79,7 +79,7 @@ const AutomationProcessVisualizer: React.FC<{ job: AutomationJob; siteName: stri
                 <div className="flex justify-between items-start">
                     <div>
                         <p className="font-bold text-white text-base">
-                            Automation running for <span className="text-brand-primary">{siteName}</span>
+                            Automation running for <span className="text-blue-400">{siteName}</span>
                         </p>
                         <p className="text-sm text-text-secondary truncate mt-1">Topic: {job.topic}</p>
                     </div>
@@ -97,7 +97,7 @@ const AutomationProcessVisualizer: React.FC<{ job: AutomationJob; siteName: stri
 
                             let color = 'text-gray-500';
                             let Icon = stepIcons[step.label];
-                            if (isActive) color = 'text-brand-primary animate-pulse';
+                            if (isActive) color = 'text-blue-400 animate-pulse';
                             if (isDone) color = 'text-green-400';
                             if (isFailed) {
                                 color = 'text-red-400';
@@ -107,8 +107,8 @@ const AutomationProcessVisualizer: React.FC<{ job: AutomationJob; siteName: stri
                             return (
                                 <React.Fragment key={step.label}>
                                     <div className="flex flex-col items-center text-center">
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${isActive ? 'border-brand-primary/50 bg-brand-primary/30' : isDone ? 'border-green-500/50 bg-green-900/30' : isFailed ? 'border-red-500/50 bg-red-900/30' : 'border-gray-700 bg-panel-light'}`}>
-                                            {isActive ? <svg className="animate-spin h-5 w-5 text-brand-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> : <Icon className={`h-5 w-5 ${color}`} />}
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${isActive ? 'border-blue-500/50 bg-blue-900/30' : isDone ? 'border-green-500/50 bg-green-900/30' : isFailed ? 'border-red-500/50 bg-red-900/30' : 'border-gray-700 bg-panel-light'}`}>
+                                            {isActive ? <svg className="animate-spin h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> : <Icon className={`h-5 w-5 ${color}`} />}
                                         </div>
                                         <p className={`text-xs mt-1.5 font-medium ${color}`}>{step.label}</p>
                                     </div>
@@ -154,8 +154,7 @@ export const GlobalAutomationTracker: React.FC<{
 
                 const indicator = document.getElementById('job-tracker-indicator');
                 if (indicator) {
-                    // Update indicator color based on brand Blue theme
-                    indicator.style.backgroundColor = currentJobs.length > 0 ? '#1d9bf0' : 'transparent';
+                    indicator.style.backgroundColor = currentJobs.length > 0 ? '#3b82f6' : 'transparent';
                     if (currentJobs.length > 0) {
                         indicator.classList.add('animate-pulse');
                     } else {

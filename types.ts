@@ -14,13 +14,7 @@ export interface GlobalSettings {
   payoneerConnection?: PayoneerConnection;
   stripeConnection?: StripeConnection;
   payPalConnection?: PayPalConnection;
-  
-  // Deprecated: activePaymentGateway (split into local/international below)
-  activePaymentGateway?: string; 
-  
-  // New Dual-Gateway Architecture
-  localPaymentGateway?: 'payfast' | 'paystack'; // Optimized for ZAR
-  internationalPaymentGateway?: 'stripe' | 'paypal' | 'wise' | 'payoneer'; // Optimized for USD
+  activePaymentGateway?: 'paystack' | 'payfast' | 'wise' | 'payoneer' | 'stripe' | 'paypal';
 }
 
 export interface SupabaseConnection {
@@ -276,38 +270,21 @@ export interface PostHistoryItem {
 }
 
 export type SocialAccountStatus = 'connected' | 'disconnected' | 'needs_reauth' | 'error';
-export type ConnectionMethod = 'oauth' | 'api_key' | 'url' | 'credentials' | 'manual';
 
 export interface SocialMediaAccount {
     id: string;
     name: string;
     isAutomationEnabled: boolean;
     isConnected: boolean;
-    connectionMethod: ConnectionMethod;
-    
-    // OAuth Fields
     accessToken?: string | null;
     clientId?: string;
     clientSecret?: string;
-    
-    // Credential Fields
-    username?: string;
-    password?: string;
-    twoFactorSecret?: string;
-    
-    // URL Fields
-    profileUrl?: string;
-    
-    // Generic
-    destinationType?: 'profile' | 'page' | 'group' | 'channel' | 'organization';
+    destinationType?: 'profile' | 'page' | 'group' | 'channel';
     destinationId?: string;
-    availableAssets?: { id: string; name: string }[]; // List of available pages/orgs to connect to
-    
     status: SocialAccountStatus;
     statusMessage?: string;
     extraData?: {
         channelName?: string;
-        [key: string]: any;
     };
 }
 
@@ -316,24 +293,10 @@ export interface WhatsAppAccount {
     name: string;
     isAutomationEnabled: boolean;
     isConnected: boolean;
-    connectionMethod: ConnectionMethod; // 'api_key' (Graph API) or 'manual' (Phone)
-    
-    // API Method
     accessToken: string;
     phoneNumberId: string;
-    
-    // Manual Method
-    phoneNumber?: string;
-    
-    // Destinations
-    targetMode?: 'individual' | 'group' | 'both';
-    recipientPhone?: string; // e.g., "15551234567"
-    groupId?: string; // WhatsApp Group ID
-    
-    // Legacy fields (kept for backward compatibility during migration)
-    destination?: string; 
-    destinationType?: 'number' | 'group';
-
+    destination: string; // Recipient phone number or group ID
+    destinationType: 'number' | 'group';
     status: SocialAccountStatus;
     statusMessage?: string;
 }
@@ -343,15 +306,8 @@ export interface TelegramAccount {
     name: string;
     isAutomationEnabled: boolean;
     isConnected: boolean;
-    connectionMethod: ConnectionMethod; // 'api_key' (Bot) or 'url' (Channel Link)
-    
-    // Bot Method
     botToken: string;
     chatId: string; // e.g., @yourchannel or numeric ID
-    
-    // URL Method
-    channelUrl?: string;
-    
     status: SocialAccountStatus;
     statusMessage?: string;
 }

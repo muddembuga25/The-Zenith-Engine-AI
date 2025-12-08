@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { RadialBarChart, RadialBar, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 import { SeoChecklist } from '../types';
@@ -12,9 +11,9 @@ interface SEOScoreProps {
 const ChecklistItem: React.FC<{ label: string; checked: boolean; delay: number }> = ({ label, checked, delay }) => (
   <li className="flex items-center text-sm animate-fade-in-up" style={{ animationDelay: `${delay}ms`, opacity: 0, animationFillMode: 'forwards' }}>
     {checked ? (
-      <CheckCircleIcon className="h-5 w-5 text-brand-primary mr-3 flex-shrink-0" />
+      <CheckCircleIcon className="h-5 w-5 text-green-400 mr-3 flex-shrink-0" />
     ) : (
-      <XCircleIcon className="h-5 w-5 text-gray-500 mr-3 flex-shrink-0" />
+      <XCircleIcon className="h-5 w-5 text-red-400 mr-3 flex-shrink-0" />
     )}
     <span className={checked ? 'text-text-primary' : 'text-text-secondary'}>{label}</span>
   </li>
@@ -44,8 +43,7 @@ export const SEOScore: React.FC<SEOScoreProps> = ({ score, checklist }) => {
   }, [score]);
 
 
-  // Strict Branding: Use Brand Primary for high score, muted/gray for lower scores
-  const scoreColor = score > 85 ? '#1d9bf0' : score > 60 ? '#1280c9' : '#536471';
+  const scoreColor = score > 85 ? '#22c55e' : score > 60 ? '#f59e0b' : '#ef4444';
   const data = [{ name: 'score', value: score }];
 
   const checklistItems = [
@@ -82,7 +80,7 @@ export const SEOScore: React.FC<SEOScoreProps> = ({ score, checklist }) => {
 
   return (
     <div className="w-full">
-        <h3 className="text-xl font-bold mb-4 border-b border-border pb-2 text-brand-primary">SEO Analysis</h3>
+        <h3 className="text-xl font-bold mb-4 border-b border-border pb-2 text-blue-300">SEO Analysis</h3>
       <div className="relative w-40 h-40 mx-auto my-4">
         <ResponsiveContainer width="100%" height="100%">
           <RadialBarChart
@@ -126,7 +124,7 @@ export const SEOScore: React.FC<SEOScoreProps> = ({ score, checklist }) => {
                 </ul>
             </div>
         ))}
-      </div>
+      </ul>
     </div>
   );
 };

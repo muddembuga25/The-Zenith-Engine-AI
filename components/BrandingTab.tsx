@@ -46,8 +46,8 @@ const TabGuide: React.FC<{ title: string; children: React.ReactNode; }> = ({ tit
 const Panel: React.FC<{ title: string; description: string; icon: React.FC<any>; children: React.ReactNode }> = ({ title, description, icon: Icon, children }) => (
     <div className="bg-panel/50 p-6 rounded-2xl border border-border">
         <div className="flex items-start gap-4 mb-6">
-            <div className="p-3 rounded-lg bg-brand-primary/10 border border-brand-primary/20 flex-shrink-0">
-                <Icon className="h-6 w-6 text-brand-primary" />
+            <div className="p-3 rounded-lg bg-blue-600/20 border border-blue-500/30 flex-shrink-0">
+                <Icon className="h-6 w-6 text-blue-300" />
             </div>
             <div>
                 <h3 className="text-xl font-bold text-main">{title}</h3>
@@ -117,7 +117,7 @@ const CharacterPersonasPanel: React.FC<{
     
     if (editingCharacter) {
         return (
-            <div className="mt-4 p-4 bg-panel rounded-lg border border-brand-primary/20 animate-fade-in space-y-4">
+            <div className="mt-4 p-4 bg-panel rounded-lg border border-blue-500/30 animate-fade-in space-y-4">
                 <h4 className="font-semibold text-lg text-main">{editingCharacter.id ? `Editing "${editingCharacter.name}"` : "Add New Character"}</h4>
                 <div>
                     <label className="block text-sm font-medium text-text-primary mb-1">Character Name</label>
@@ -282,7 +282,7 @@ const ImageGalleryPanel: React.FC<BrandingTabProps> = ({ site, onSiteUpdate, log
                         checked={site.isIntelligentGalleryEnabled ?? false} 
                         onChange={e => onSiteUpdate('isIntelligentGalleryEnabled', e.target.checked)}
                     />
-                    <div className="w-11 h-6 bg-gray-600/50 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
+                    <div className="w-11 h-6 bg-gray-600/50 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                 </label>
             </div>
             
@@ -312,7 +312,7 @@ const ImageGalleryPanel: React.FC<BrandingTabProps> = ({ site, onSiteUpdate, log
                                     <p className="text-xs font-semibold text-white truncate">{image.altText}</p>
                                     <div className="flex flex-wrap gap-1 mt-1">
                                         {image.tags.slice(0, 3).map(tag => (
-                                            <span key={tag} className="text-[10px] bg-brand-primary/20 text-brand-primary px-1.5 py-0.5 rounded-full">{tag}</span>
+                                            <span key={tag} className="text-[10px] bg-blue-900/70 text-blue-300 px-1.5 py-0.5 rounded-full">{tag}</span>
                                         ))}
                                     </div>
                                 </div>
@@ -402,7 +402,7 @@ const ContentCalendarPanel: React.FC<BrandingTabProps> = ({ site, onSiteUpdate }
                  <p className="text-sm font-medium text-text-primary">Enable Content Calendar</p>
                 <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" checked={site.isContentCalendarEnabled ?? false} onChange={e => onSiteUpdate('isContentCalendarEnabled', e.target.checked)} />
-                    <div className="w-11 h-6 bg-gray-600/50 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
+                    <div className="w-11 h-6 bg-gray-600/50 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                 </label>
             </div>
             {(site.isContentCalendarEnabled ?? false) && (
@@ -568,7 +568,7 @@ export const BrandingTab: React.FC<BrandingTabProps> = (props) => {
                                                 </button>
                                             </div>
                                         ) : (
-                                            <label htmlFor={`${type}-logo-upload`} className="aspect-video bg-panel rounded-lg border-2 border-dashed border-border hover:border-brand-primary transition-colors flex flex-col items-center justify-center cursor-pointer">
+                                            <label htmlFor={`${type}-logo-upload`} className="aspect-video bg-panel rounded-lg border-2 border-dashed border-border hover:border-blue-500 transition-colors flex flex-col items-center justify-center cursor-pointer">
                                                 <ArrowUpTrayIcon className="h-6 w-6 text-text-secondary" />
                                                 <span className="text-xs text-text-secondary mt-1">Upload Logo</span>
                                                 <input id={`${type}-logo-upload`} type="file" accept="image/png, image/jpeg, image/svg+xml" onChange={(e) => handleLogoUpload(e, type)} className="sr-only" />

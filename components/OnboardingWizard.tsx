@@ -21,13 +21,13 @@ const StepIndicator: React.FC<{ steps: string[], currentStepIndex: number }> = (
                 {steps.map((stepName, stepIdx) => (
                     <li key={stepName} className="md:flex-1">
                         {stepIdx < currentStepIndex ? (
-                            <div className="group flex w-full flex-col border-l-4 border-brand-primary py-2 pl-4 md:border-l-0 md:border-t-4 md:pl-0 md:pt-4 md:pb-0">
-                                <span className="text-sm font-medium text-brand-primary">{`Step ${stepIdx + 1}`}</span>
+                            <div className="group flex w-full flex-col border-l-4 border-blue-600 py-2 pl-4 md:border-l-0 md:border-t-4 md:pl-0 md:pt-4 md:pb-0">
+                                <span className="text-sm font-medium text-blue-400">{`Step ${stepIdx + 1}`}</span>
                                 <span className="text-sm font-medium text-white">{stepName}</span>
                             </div>
                         ) : stepIdx === currentStepIndex ? (
-                            <div className="flex w-full flex-col border-l-4 border-brand-primary py-2 pl-4 md:border-l-0 md:border-t-4 md:pl-0 md:pt-4 md:pb-0" aria-current="step">
-                                <span className="text-sm font-medium text-brand-primary-hover">{`Step ${stepIdx + 1}`}</span>
+                            <div className="flex w-full flex-col border-l-4 border-blue-600 py-2 pl-4 md:border-l-0 md:border-t-4 md:pl-0 md:pt-4 md:pb-0" aria-current="step">
+                                <span className="text-sm font-medium text-blue-300">{`Step ${stepIdx + 1}`}</span>
                                 <span className="text-sm font-medium text-white">{stepName}</span>
                             </div>
                         ) : (
@@ -84,7 +84,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ currentUser,
             case 'create_site':
                 return (
                      <div className="text-center max-w-lg mx-auto py-8">
-                        <PenIcon className="h-16 w-16 text-brand-primary mx-auto" />
+                        <PenIcon className="h-16 w-16 text-blue-400 mx-auto" />
                         <h2 className="text-2xl font-bold text-white mt-6">Create Your First Site</h2>
                         <p className="text-text-secondary mt-2">A "Site" is a workspace for a single website or project. This will contain all your content, settings, and branding.</p>
                         <button onClick={handleSiteCreated} className="mt-8 btn btn-primary text-lg px-8 py-3">Create Site & Continue</button>
@@ -93,7 +93,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ currentUser,
             case 'connect_wp':
                 return (
                      <div className="text-center max-w-2xl mx-auto py-8">
-                        <WordPressIcon className="h-16 w-16 text-brand-primary mx-auto" />
+                        <WordPressIcon className="h-16 w-16 text-blue-400 mx-auto" />
                         <h2 className="text-2xl font-bold text-white mt-6">Connect Your WordPress Site</h2>
                          <p className="text-text-secondary mt-2">This is a crucial step. Connecting your website enables Zenith Engine AI to publish content directly to your blog.</p>
                          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
@@ -107,7 +107,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ currentUser,
             case 'add_idea':
                 return (
                      <div className="text-center max-w-2xl mx-auto py-8">
-                        <DocumentTextIcon className="h-16 w-16 text-brand-primary mx-auto" />
+                        <DocumentTextIcon className="h-16 w-16 text-blue-400 mx-auto" />
                         <h2 className="text-2xl font-bold text-white mt-6">Add Your First Content Idea</h2>
                          <p className="text-text-secondary mt-2">Your content engine needs fuel. Add a keyword or topic for the AI to write about. You can add more later in the Content Hub.</p>
                          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">

@@ -26,8 +26,8 @@ const providerDisplayNames: Record<keyof ApiKeys, string> = {
   dataforseo: 'DataForSEO',
 };
 
-// Using Brand Primary (#1d9bf0) as the lead color
-const COLORS = ['#1d9bf0', '#4dabf5', '#7dc0f8', '#aed5fb', '#dff0ff', '#1280c9', '#0d6efd'];
+// Replaced Blue (#3b82f6) with Indigo (#6366f1)
+const COLORS = ['#6366f1', '#82ca9d', '#ffc658', '#ff8042', '#00C49F', '#FFBB28', '#0088FE'];
 
 const TabGuide: React.FC<{ title: string; children: React.ReactNode; }> = ({ title, children }) => {
     const [isVisible, setIsVisible] = useState(true);
@@ -81,7 +81,7 @@ const ApiKeyInputRow: React.FC<{
     return (
         <div className="p-4 bg-panel rounded-lg border border-border-subtle">
             <div className="flex justify-between items-center mb-2">
-                <a href={apiDocLink} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-text-primary hover:text-brand-primary hover:underline">
+                <a href={apiDocLink} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-text-primary hover:text-blue-400 hover:underline">
                     {name}
                 </a>
                 <div className="flex items-center gap-2 text-xs">
@@ -104,10 +104,10 @@ const ApiKeyInputRow: React.FC<{
                         {isPasswordVisible ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
                     </button>
                     <div className="h-4 w-px bg-gray-600"></div>
-                    <button type="button" onClick={onVerify} className="text-xs font-semibold text-brand-primary hover:text-brand-primary-hover">Verify</button>
+                    <button type="button" onClick={onVerify} className="text-xs font-semibold text-blue-400 hover:text-blue-300">Verify</button>
                 </div>
             </div>
-            <a href={docLink} target="_blank" rel="noopener noreferrer" className="text-xs text-text-secondary hover:text-brand-primary hover:underline mt-1.5 inline-block">
+            <a href={docLink} target="_blank" rel="noopener noreferrer" className="text-xs text-text-secondary hover:text-blue-400 hover:underline mt-1.5 inline-block">
                 Get API Key
             </a>
             {provider === 'google' && (
@@ -172,7 +172,7 @@ const DataForSeoApiKeyManager: React.FC<{
     return (
         <div className="p-4 bg-panel rounded-lg border border-border-subtle space-y-3">
             <div className="flex justify-between items-center">
-                 <a href={keyInfo.apiDocLink} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-text-primary hover:text-brand-primary hover:underline">
+                 <a href={keyInfo.apiDocLink} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-text-primary hover:text-blue-400 hover:underline">
                      {keyInfo.name}
                 </a>
                 <div className="flex items-center gap-2 text-xs">
@@ -222,10 +222,10 @@ const DataForSeoApiKeyManager: React.FC<{
             </div>
     
              <div className="flex justify-between items-center mt-2">
-                 <a href={keyInfo.docLink} target="_blank" rel="noopener noreferrer" className="text-xs text-text-secondary hover:text-brand-primary hover:underline">
+                 <a href={keyInfo.docLink} target="_blank" rel="noopener noreferrer" className="text-xs text-text-secondary hover:text-blue-400 hover:underline">
                      Get API Key
                  </a>
-                 <button type="button" onClick={handleVerifyClick} className="text-sm font-semibold text-brand-primary hover:text-brand-primary-hover">Verify</button>
+                 <button type="button" onClick={handleVerifyClick} className="text-sm font-semibold text-blue-400 hover:text-blue-300">Verify</button>
             </div>
             {keyInfo.description && (
                  <p className="text-xs text-text-secondary pt-2 border-t border-border-subtle">{keyInfo.description}</p>
@@ -397,7 +397,7 @@ export const ApiSpendDashboard: React.FC<ApiSpendDashboardProps> = ({ sites, onR
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="bg-panel/50 p-6 rounded-2xl border border-border">
                     <h3 className="text-lg font-bold text-main mb-2">Total Estimated Spend</h3>
-                    <p className="text-5xl font-extrabold text-brand-primary">${totalSpend.toFixed(5)}</p>
+                    <p className="text-5xl font-extrabold text-blue-300">${totalSpend.toFixed(5)}</p>
                     <p className="text-xs text-text-secondary">Aggregated across all your sites.</p>
                     <div className="mt-6" style={{ width: '100%', height: 250 }}>
                         {spendData.length > 0 ? (
@@ -407,7 +407,7 @@ export const ApiSpendDashboard: React.FC<ApiSpendDashboardProps> = ({ sites, onR
                                     <XAxis type="number" stroke="var(--color-text-secondary)" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} tickFormatter={(value) => `$${Number(value).toFixed(4)}`} />
                                     <YAxis type="category" dataKey="name" stroke="var(--color-text-secondary)" tick={{ fill: 'var(--color-text-secondary)', fontSize: 12 }} width={80} />
                                     <Tooltip
-                                        cursor={{ fill: 'rgba(29, 155, 240, 0.1)'}}
+                                        cursor={{ fill: 'rgba(99, 102, 241, 0.1)'}} // Indigo tint
                                         contentStyle={{ backgroundColor: 'var(--color-panel-light)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)', borderRadius: '0.5rem' }}
                                         formatter={(value: number) => [`$${value.toFixed(5)}`, 'Spend']}
                                     />

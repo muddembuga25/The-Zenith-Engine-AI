@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import type { PostHistoryItem, Site } from '../types';
 import { XIconSocial, FacebookIcon, LinkedInIcon, InstagramIcon, PinterestIcon, PhotoIcon, YouTubeIcon, TikTokIcon, VideoCameraIcon, KeyIcon, MailIcon, ChartBarIcon, ShareIcon, ClarityIcon, DeadClickIcon, RageClickIcon, ScrollDepthIcon } from './Icons';
@@ -35,8 +34,7 @@ const PostPerformanceViewer: React.FC<{ post: PostHistoryItem }> = ({ post }) =>
         return <div className="text-center py-12 text-text-secondary">No analytics data available for this post.</div>
     }
 
-    // Strict Brand Palette (#1d9bf0)
-    const COLORS = ['#1d9bf0', '#4dabf5', '#7dc0f8', '#aed5fb'];
+    const COLORS = ['#3b82f6', '#82ca9d', '#ffc658', '#ff8042'];
 
     // Generate more realistic chart data based on the actual analytics
     const trendData = Array.from({ length: 30 }, (_, i) => {
@@ -80,7 +78,7 @@ const PostPerformanceViewer: React.FC<{ post: PostHistoryItem }> = ({ post }) =>
                             <XAxis dataKey="name" stroke="var(--color-text-secondary)" tick={{ fontSize: 10 }} />
                             <YAxis stroke="var(--color-text-secondary)" tick={{ fontSize: 10 }} />
                             <Tooltip contentStyle={{ backgroundColor: 'var(--color-panel-light)', border: '1px solid var(--color-border)' }} />
-                            <Line type="monotone" dataKey="Pageviews" stroke="#1d9bf0" strokeWidth={2} dot={false} />
+                            <Line type="monotone" dataKey="Pageviews" stroke="#3b82f6" strokeWidth={2} dot={false} />
                         </LineChart>
                     </ResponsiveContainer>
                 </div>
@@ -178,7 +176,7 @@ export const HistoryDetailViewer: React.FC<{ post: PostHistoryItem, site: Site }
                                 const platform = platformDetails[platformKey] || { name: platformKey.charAt(0).toUpperCase() + platformKey.slice(1), icon: PhotoIcon };
                                 const Icon = platform.icon;
                                 return (
-                                <button key={platformKey} onClick={() => setActivePlatform(platformKey)} className={`${ activePlatform === platformKey ? 'border-brand-primary text-brand-primary' : 'border-transparent text-text-secondary hover:text-text-primary hover:border-gray-500' } flex items-center gap-2 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors`}>
+                                <button key={platformKey} onClick={() => setActivePlatform(platformKey)} className={`${ activePlatform === platformKey ? 'border-blue-500 text-blue-400' : 'border-transparent text-text-secondary hover:text-text-primary hover:border-gray-500' } flex items-center gap-2 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors`}>
                                     <Icon className="h-5 w-5" /> {platform.name}
                                 </button>
                                 )}
@@ -224,7 +222,7 @@ export const HistoryDetailViewer: React.FC<{ post: PostHistoryItem, site: Site }
                             const platform = platformDetails[platformKey] || { name: platformKey.charAt(0).toUpperCase() + platformKey.slice(1), icon: VideoCameraIcon };
                             const Icon = platform.icon;
                             return (
-                                <button key={platformKey} onClick={() => setActivePlatform(platformKey)} className={`${ activePlatform === platformKey ? 'border-brand-primary text-brand-primary' : 'border-transparent text-text-secondary hover:text-text-primary hover:border-gray-500' } flex items-center gap-2 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors`}>
+                                <button key={platformKey} onClick={() => setActivePlatform(platformKey)} className={`${ activePlatform === platformKey ? 'border-blue-500 text-blue-400' : 'border-transparent text-text-secondary hover:text-text-primary hover:border-gray-500' } flex items-center gap-2 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors`}>
                                     <Icon className="h-5 w-5" /> {platform.name}
                                 </button>
                             );

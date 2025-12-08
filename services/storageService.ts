@@ -6,145 +6,130 @@ const OAUTH_STATE_KEY = 'zenith_oauth_state';
 const PKCE_VERIFIER_KEY = 'zenith_pkce_verifier';
 const GLOBAL_SETTINGS_KEY = 'zenith-engine-ai-global-settings';
 
-// Helper for local site storage fallback
-const getLocalSites = (userId: string): Site[] => {
-    try {
-        return JSON.parse(localStorage.getItem(`zenith_sites_${userId}`) || '[]');
-    } catch { return []; }
-};
-
-const saveLocalSites = (userId: string, sites: Site[]) => {
-    localStorage.setItem(`zenith_sites_${userId}`, JSON.stringify(sites));
-};
-
 export const storageService = {
-  // --- SITE MANAGEMENT (Supabase + Local Fallback) ---
+  // --- SITE MANAGEMENT (Supabase Source of Truth) ---
 
   loadSitesAndLastId: async (user: User): Promise<{ sites: Site[]; lastSelectedId: string | null }> => {
     if (!user) return { sites: [], lastSelectedId: null };
 
-    // Attempt to load from local storage first (fastest)
-    const localSites = getLocalSites(user.uid);
-    let lastSelectedId = localStorage.getItem(`zenith_last_site_${user.uid}`);
-
-    try {
-      const { data, error } = await supabase
+    // Fetch sites from Supabase
+    const { data, error } = await supabase
         .from('sites')
         .select('*')
         .eq('owner_id', user.uid)
         .order('updated_at', { ascending: false });
 
-      if (error) throw error;
-
-      // Map DB rows back to Site objects
-      const remoteSites: Site[] = data.map(row => ({
-        ...row.data, // The JSONB column
-        id: row.id,  // Ensure ID matches PK
-      }));
-
-      // Update local backup with fresh data
-      saveLocalSites(user.uid, remoteSites);
-
-      // Find the one marked as last selected from DB
-      const selectedSite = data.find(row => row.is_selected);
-      if (selectedSite) {
-          lastSelectedId = selectedSite.id;
-          localStorage.setItem(`zenith_last_site_${user.uid}`, lastSelectedId);
-      } else if (remoteSites.length > 0) {
-          lastSelectedId = remoteSites[0].id;
-      } else {
-          lastSelectedId = null;
-      }
-
-      return { sites: remoteSites, lastSelectedId };
-    } catch (e) {
-      // Quietly fall back to local data if remote fails
-      return { sites: localSites, lastSelectedId: lastSelectedId || (localSites.length > 0 ? localSites[0].id : null) };
+    if (error) {
+        console.error("Error loading sites from Supabase:", error);
+        throw error;
     }
+
+    // Map DB rows back to Site objects
+    const remoteSites: Site[] = data.map(row => ({
+        ...row.data, // The JSONB column contains the full site object
+        id: row.id,  // Ensure ID matches PK
+    }));
+
+    // Find the site marked as last selected from DB
+    const selectedSite = data.find(row => row.is_selected);
+    let lastSelectedId = selectedSite ? selectedSite.id : (remoteSites.length > 0 ? remoteSites[0].id : null);
+
+    return { sites: remoteSites, lastSelectedId };
   },
 
   getSites: async (userId: string): Promise<Site[]> => {
-      try {
-          const { data, error } = await supabase
-            .from('sites')
-            .select('data, id')
-            .eq('owner_id', userId);
-          
-          if(error) throw error;
-          const sites = data.map(r => ({ ...r.data, id: r.id }));
-          saveLocalSites(userId, sites);
-          return sites;
-      } catch (e) {
-          return getLocalSites(userId);
-      }
+      const { data, error } = await supabase
+        .from('sites')
+        .select('data, id')
+        .eq('owner_id', userId);
+      
+      if(error) throw error;
+      return data.map(r => ({ ...r.data, id: r.id }));
   },
 
   saveSites: async (sites: Site[], user: User) => {
     if (!user || sites.length === 0) return;
     
-    // Always save to local storage (immediate backup)
-    saveLocalSites(user.uid, sites);
+    // Upsert sites to Supabase
+    const upsertData = sites.map(site => ({
+        id: site.id,
+        owner_id: user.uid,
+        name: site.name,
+        data: site, // Store the full object as JSONB
+        updated_at: new Date().toISOString()
+    }));
 
-    try {
-        // Upsert sites to Supabase
-        const upsertData = sites.map(site => ({
-            id: site.id,
-            owner_id: user.uid,
-            name: site.name,
-            data: site, // Store the full object as JSONB
-            updated_at: new Date().toISOString()
-        }));
+    const { error } = await supabase
+        .from('sites')
+        .upsert(upsertData, { onConflict: 'id' });
 
-        const { error } = await supabase
-            .from('sites')
-            .upsert(upsertData, { onConflict: 'id' });
-
-        if (error) throw error;
-    } catch (e) {
-        // Suppress error, we saved locally
-    }
+    if (error) throw error;
   },
 
   saveAllSites: async (userId: string, sites: Site[]) => {
-      // Used by automation worker
-      saveLocalSites(userId, sites);
-      try {
-        const upsertData = sites.map(site => ({
-            id: site.id,
-            owner_id: userId,
-            name: site.name,
-            data: site,
-            updated_at: new Date().toISOString()
-        }));
-        await supabase.from('sites').upsert(upsertData);
-      } catch (e) {
-          // Suppress error
-      }
+      // Used by automation worker (Node.js context)
+      const upsertData = sites.map(site => ({
+          id: site.id,
+          owner_id: userId,
+          name: site.name,
+          data: site,
+          updated_at: new Date().toISOString()
+      }));
+      
+      const { error } = await supabase.from('sites').upsert(upsertData);
+      if(error) throw error;
   },
 
   saveLastSelectedSiteId: async (userId: string, siteId: string) => {
-    localStorage.setItem(`zenith_last_site_${userId}`, siteId);
-    try {
-        await supabase.from('sites').update({ is_selected: false }).eq('owner_id', userId);
-        await supabase.from('sites').update({ is_selected: true }).eq('id', siteId);
-    } catch (e) {
-        // Suppress error
-    }
+    // 1. Reset selection for this user
+    const { error: resetError } = await supabase
+        .from('sites')
+        .update({ is_selected: false })
+        .eq('owner_id', userId);
+        
+    if (resetError) console.error("Error resetting site selection:", resetError);
+
+    // 2. Set new selection
+    const { error: setError } = await supabase
+        .from('sites')
+        .update({ is_selected: true })
+        .eq('id', siteId);
+
+    if (setError) console.error("Error saving site selection:", setError);
   },
 
   clearAllSitesData: async (user: User) => {
       if (!user) return;
-      localStorage.removeItem(`zenith_sites_${user.uid}`);
-      localStorage.removeItem(`zenith_last_site_${user.uid}`);
+      const { error } = await supabase.from('sites').delete().eq('owner_id', user.uid);
+      if (error) console.error("Error clearing sites remotely:", error);
+  },
+
+  // --- MIGRATION UTILITY ---
+  // Can be called to push local data to Supabase if transitioning existing users
+  migrateGuestDataToUser: async (user: User) => {
       try {
-        await supabase.from('sites').delete().eq('owner_id', user.uid);
+          const localSitesJson = localStorage.getItem(`zenith_sites_${user.uid}`);
+          if (localSitesJson) {
+              const localSites = JSON.parse(localSitesJson);
+              if (Array.isArray(localSites) && localSites.length > 0) {
+                  // Only migrate if remote has no sites? Or upsert?
+                  // Let's check remote count first
+                  const { count } = await supabase.from('sites').select('*', { count: 'exact', head: true }).eq('owner_id', user.uid);
+                  
+                  if (count === 0) {
+                      console.log("Migrating local sites to Supabase for user:", user.email);
+                      await storageService.saveSites(localSites, user);
+                  }
+              }
+          }
       } catch (e) {
-          // Suppress error
+          console.error("Migration failed:", e);
       }
   },
 
-  // --- LEGACY / LOCAL MIGRATION HELPERS ---
+  // --- LEGACY HELPERS ---
   loadLegacySiteSettings: () => {
+    // Kept for initial import from v1 local storage
     try {
       const settingsJson = localStorage.getItem('zenith-engine-ai-settings');
       return settingsJson ? JSON.parse(settingsJson) : null;
@@ -157,12 +142,8 @@ export const storageService = {
     localStorage.removeItem('zenith-engine-ai-settings');
   },
 
-  migrateGuestDataToUser: async (user: User) => {
-      // Migration logic handled in App.tsx
-  },
-
   // --- LOCAL HELPERS (OAuth, Settings) ---
-
+  // OAuth state is transient and browser-specific, so we keep it in localStorage
   setOAuthState: (state: string) => {
     localStorage.setItem(OAUTH_STATE_KEY, state);
   },
@@ -187,6 +168,9 @@ export const storageService = {
     localStorage.removeItem(PKCE_VERIFIER_KEY);
   },
 
+  // Global settings (Gateways, etc) - Ideally move to a 'system_settings' table in Supabase
+  // but for now, we'll keep local or implement a simple remote fetch if needed.
+  // For production, this should be in the DB accessible only by admins.
   loadGlobalSettings: (): GlobalSettings => {
       try {
           const settings = localStorage.getItem(GLOBAL_SETTINGS_KEY);

@@ -2,37 +2,48 @@
 import type { SocialMediaAccount, SocialMediaPost, WhatsAppAccount, TelegramAccount, Site, MetaAsset } from '../types';
 import type { SocialPlatform } from './oauthService';
 import * as secureBackend from './secureBackendSimulation';
-import { proxyFetch } from './secureBackendSimulation';
 
+// A union type for any kind of account for easier handling.
 type AnyAccount = SocialMediaAccount | WhatsAppAccount | TelegramAccount;
 
+/**
+ * Creates a unified list of all enabled social media destinations for a specific platform.
+ * This function is the single source of truth for the automation engine. It combines
+ * individually connected accounts with assets managed via the Meta Business Suite.
+ * @param site The site configuration object.
+ * @param platform The social media platform (e.g., 'facebook', 'instagram', 'whatsapp').
+ * @returns An array of account-like objects ready for posting.
+ */
 export function getEnabledDestinations(site: Site, platform: string): (AnyAccount & { metaConnectionId?: string })[] {
     const destinations: (AnyAccount & { metaConnectionId?: string })[] = [];
     const platformKey = platform as keyof typeof site.socialMediaSettings;
 
+    // 1. Get individually connected accounts that are enabled and have a 'connected' status.
     const individualAccounts = (site.socialMediaSettings[platformKey] as AnyAccount[] | undefined) || [];
     destinations.push(...individualAccounts.filter(acc => acc.isAutomationEnabled && acc.status === 'connected'));
 
+    // 2. Get accounts from the Meta Business Suite connection, if it exists and is connected.
     const metaConnection = site.socialMediaSettings.meta?.[0];
     if (metaConnection && metaConnection.status === 'connected' && (platform === 'facebook' || platform === 'instagram')) {
         const metaAssetsForPlatform = metaConnection.assets.filter(asset => asset.platform === platform && asset.isEnabled);
         
+        // Map MetaAsset to a structure compatible with SocialMediaAccount for the posting service.
         const mappedAssets: (SocialMediaAccount & { metaConnectionId?: string })[] = metaAssetsForPlatform.map(asset => ({
             id: asset.id,
             name: asset.name,
-            isAutomationEnabled: true,
-            isConnected: true,
+            isAutomationEnabled: true, // If the asset is enabled in the UI, it's enabled for automation.
+            isConnected: true, // Redundant but good for compatibility. The real check is the parent's status.
             status: 'connected',
-            connectionMethod: 'oauth',
-            accessToken: metaConnection.userAccessToken,
-            destinationId: asset.id,
-            destinationType: 'page',
-            metaConnectionId: metaConnection.id
+            accessToken: metaConnection.userAccessToken, // Use the main user access token from the Meta connection.
+            destinationId: asset.id, // The asset ID is the destination for posting.
+            destinationType: 'page', // Assume Meta assets are pages or business accounts.
+            metaConnectionId: metaConnection.id // Add a reference back to the parent Meta connection.
         }));
         
         destinations.push(...mappedAssets);
     }
     
+    // Return a unique list based on account/asset ID to prevent duplicates if connected in multiple ways.
     const uniqueDestinations = Array.from(new Map(destinations.map(item => [item.id, item])).values());
     
     return uniqueDestinations;
@@ -43,7 +54,7 @@ export const postToSocialMedia = async (
     platform: SocialPlatform,
     account: SocialMediaAccount | WhatsAppAccount | TelegramAccount,
     post: SocialMediaPost,
-    media?: { type: 'image' | 'video'; data: string } 
+    media?: { type: 'image' | 'video'; data: string } // data can be base64 or URL
 ): Promise<{ success: boolean; message?: string }> => {
     
     if (platform === 'whatsapp') {
@@ -54,82 +65,35 @@ export const postToSocialMedia = async (
         return secureBackend.postToTelegram(account as TelegramAccount, post, media);
     }
 
-    try {
-        if (platform === 'twitter') {
-            const acc = account as SocialMediaAccount;
-            const url = `https://api.twitter.com/2/tweets`;
-            const response = await proxyFetch(url, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${acc.accessToken}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ text: post.content })
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.detail || data.title || 'Twitter API Error');
-            return { success: true };
-        }
+    // Keep simulation for other platforms due to frontend security constraints (client secrets)
+    let channelInfo = '';
+    if (platform === 'youtube') {
+        const ytAccount = account as SocialMediaAccount;
+        channelInfo = `\nChannel: ${ytAccount.extraData?.channelName || 'Default'} (ID: ${ytAccount.destinationId || 'Not specified'})`;
+    }
 
-        if (platform === 'facebook') {
-            const acc = account as SocialMediaAccount;
-            const pageId = acc.destinationId || acc.id; 
-            const url = `https://graph.facebook.com/${pageId}/feed`;
-            const response = await proxyFetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    message: post.content,
-                    access_token: acc.accessToken
-                })
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error?.message || 'Facebook API Error');
-            return { success: true };
-        }
+    const mediaLog = media ? `\nMedia Type: ${media.type}\nMedia Data: ${media.data.substring(0, 70)}...` : '';
 
-        if (platform === 'linkedin') {
-            const acc = account as SocialMediaAccount;
-            const url = `https://api.linkedin.com/v2/ugcPosts`;
-            
-            // Determine if posting to organization or person based on destinationId
-            const author = acc.destinationId 
-                ? (acc.destinationId.startsWith('urn:') ? acc.destinationId : `urn:li:organization:${acc.destinationId}`)
-                : `urn:li:person:${acc.id}`; 
-            
-            const body = {
-                author: author,
-                lifecycleState: "PUBLISHED",
-                specificContent: {
-                    "com.linkedin.ugc.ShareContent": {
-                        shareCommentary: { text: post.content },
-                        shareMediaCategory: "NONE"
-                    }
-                },
-                visibility: { "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC" }
-            };
+    console.log(`
+        --- [Social Media Post Simulation] ---
+        Attempting to post to ${platform} for account "${account.name}".${channelInfo}
+        Content: "${post.content.substring(0, 50)}..."${mediaLog}
+        
+        This simulation has a chance to fail to demonstrate how the app handles
+        posting errors, like an expired token.
+        -------------------------------------------
+    `);
 
-            const response = await proxyFetch(url, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${acc.accessToken}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(body)
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'LinkedIn API Error');
-            return { success: true };
-        }
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
-        console.warn(`Live posting to ${platform} with media is not fully supported in this environment.`);
-        return { success: false, message: `Live posting to ${platform} is limited in this environment.` };
-
-    } catch (error: any) {
-        console.error(`Post to ${platform} failed:`, error);
+    // Randomly fail about 15% of the time to simulate an API error
+    if (Math.random() < 0.15) {
         return { 
             success: false, 
-            message: `Failed to post to ${platform}: ${error.message}` 
+            message: `Failed to post to ${platform}. The API token may have expired or permissions were revoked. Please reconnect.` 
         };
     }
+
+    return { success: true };
 };

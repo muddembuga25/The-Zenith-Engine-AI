@@ -9,8 +9,8 @@ import { AgencyPortalTab } from './AgencyPortalTab';
 import { GlobalConnectionsTab } from './GlobalConnectionsTab';
 import { ChartPieIcon, UsersIcon, BuildingOffice2Icon, SparklesIcon, LinkIcon, MagnifyingGlassIcon, UserIcon, TrashIcon, PenIcon, ArrowRightIcon, LogoIcon, SignOutIcon, ExclamationTriangleIcon, SunIcon, MoonIcon } from './Icons';
 
-// Monochrome Brand Scale for Charts (Based on #1d9bf0)
-const COLORS = ['#1d9bf0', '#4dabf5', '#7dc0f8', '#aed5fb', '#dff0ff'];
+// Monochrome Brand Scale for Charts
+const COLORS = ['#1DA1F2', '#4ABBF9', '#0C85D0', '#034E7D'];
 
 interface AdminDashboardProps {
     currentUser: User;
@@ -53,7 +53,7 @@ const UserRow: React.FC<{ user: User; onImpersonate: (user: User) => void; onUpd
             <td className="py-4 px-4 text-sm text-text-secondary font-mono">{user.monthlyGenerations?.count || 0}</td>
             <td className="py-4 px-4 text-right">
                 <div className="flex items-center justify-end gap-2">
-                    <button onClick={() => onImpersonate(user)} className="text-brand-primary hover:text-brand-primary-hover text-xs font-medium px-2 py-1 rounded hover:bg-brand-primary/10 transition-colors">Impersonate</button>
+                    <button onClick={() => onImpersonate(user)} className="text-blue-400 hover:text-blue-300 text-xs font-medium px-2 py-1 rounded hover:bg-blue-900/30 transition-colors">Impersonate</button>
                     {!user.isAdmin && <button onClick={() => onDelete(user.email)} className="text-red-400 hover:text-red-300 p-1 rounded hover:bg-red-900/30 transition-colors"><TrashIcon className="h-4 w-4" /></button>}
                 </div>
             </td>
@@ -240,7 +240,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onI
 
     return (
         <div className="h-full w-full flex flex-col bg-app">
-            <header className="bg-panel-light/50 backdrop-blur-lg border-b border-border h-16 flex-shrink-0 flex items-center justify-center sm:justify-between px-6">
+            <header className="bg-panel-light/50 backdrop-blur-lg border-b border-border h-16 flex-shrink-0 flex items-center justify-between px-6">
                  <div className="flex items-center gap-3">
                   <LogoIcon className="h-7 w-7 text-brand-primary" />
                   <span className="font-bold text-xl text-main">Admin Dashboard</span>

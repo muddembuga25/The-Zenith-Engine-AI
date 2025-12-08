@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import type { Site, RssItem, PostHistoryItem, ApiKeys } from '../types';
 import { GenerateTab } from './GenerateTab';
@@ -30,15 +29,15 @@ const TabGuide: React.FC<{ title: string; children: React.ReactNode; }> = ({ tit
     const [isVisible, setIsVisible] = useState(true);
     if (!isVisible) return null;
     return (
-        <div className="bg-brand-primary/10 p-4 rounded-lg border border-brand-primary/30 mb-8 flex items-start gap-4 animate-fade-in">
-            <LightbulbIcon className="h-6 w-6 text-brand-primary flex-shrink-0 mt-1" />
+        <div className="bg-blue-900/20 p-4 rounded-lg border border-blue-500/30 mb-8 flex items-start gap-4 animate-fade-in">
+            <LightbulbIcon className="h-6 w-6 text-blue-300 flex-shrink-0 mt-1" />
             <div className="flex-1">
                 <h3 className="font-bold text-white">{title}</h3>
-                <div className="text-sm text-brand-primary mt-1">
+                <div className="text-sm text-blue-200/80 mt-1">
                     {children}
                 </div>
             </div>
-            <button onClick={() => setIsVisible(false)} className="p-1.5 text-brand-primary hover:text-white rounded-full">
+            <button onClick={() => setIsVisible(false)} className="p-1.5 text-blue-200/60 hover:text-white rounded-full">
                 <XIcon className="h-5 w-5" />
             </button>
         </div>
@@ -102,7 +101,7 @@ export const ContentHubTab: React.FC<ContentHubTabProps> = (props) => {
                             onClick={() => setActiveSubTab(tab.id)}
                             className={`${
                                 activeSubTab === tab.id
-                                    ? 'border-brand-primary text-brand-primary'
+                                    ? 'border-blue-500 text-blue-400'
                                     : 'border-transparent text-text-secondary hover:text-text-primary hover:border-gray-500'
                             } flex items-center gap-2 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors`}
                             aria-current={activeSubTab === tab.id ? 'page' : undefined}

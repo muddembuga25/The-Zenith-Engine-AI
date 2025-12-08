@@ -165,7 +165,7 @@ export const CampaignViewer: React.FC<CampaignViewerProps> = ({ post, site, onUp
                 return (
                      <div className="flex items-center gap-4 p-3 bg-panel-light rounded-lg border border-border-subtle">
                         <button onClick={() => playAudio(asset.content as string)} className="btn btn-secondary p-3">
-                            <SpeakerWaveIcon className={`h-6 w-6 ${playingAudio === asset.content ? 'text-brand-primary' : ''}`} />
+                            <SpeakerWaveIcon className={`h-6 w-6 ${playingAudio === asset.content ? 'text-blue-400' : ''}`} />
                         </button>
                         <p className="text-sm text-text-secondary">Audio summary. Click to play.</p>
                     </div>
@@ -206,7 +206,7 @@ export const CampaignViewer: React.FC<CampaignViewerProps> = ({ post, site, onUp
                                                     prev.includes(opt.id) ? prev.filter(id => id !== opt.id) : [...prev, opt.id]
                                                 );
                                             }}
-                                            className="h-4 w-4 rounded bg-gray-700 border-gray-600 text-brand-primary focus:ring-brand-primary"
+                                            className="h-4 w-4 rounded bg-gray-700 border-gray-600 text-blue-600 focus:ring-blue-500"
                                         />
                                         <opt.icon className="h-5 w-5 mx-3" />
                                         <span className="text-sm font-medium text-main">{opt.label}</span>
@@ -225,7 +225,7 @@ export const CampaignViewer: React.FC<CampaignViewerProps> = ({ post, site, onUp
 
             {isGenerating && (
                 <div className="text-center p-12">
-                    <svg className="animate-spin h-8 w-8 text-brand-primary mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <svg className="animate-spin h-8 w-8 text-blue-400 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                     <p className="mt-3 text-text-primary font-semibold">{generationStatus || "Generating campaign assets..."}</p>
                 </div>
             )}

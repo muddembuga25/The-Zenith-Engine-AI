@@ -1,12 +1,17 @@
 
-import type { WhatsAppAccount, TelegramAccount, MetaAsset, Site, MetaAdsAccount, GoogleAdsAccount, SocialMediaAccount } from '../types';
+import type { WhatsAppAccount, TelegramAccount, MetaAsset, Site, MetaAdsAccount, GoogleAdsAccount } from '../types';
 import { storageService } from './storageService';
-import * as secureBackend from './secureBackendSimulation';
-import { proxyFetch } from './secureBackendSimulation';
+import { supabase } from './supabaseClient';
+
+const CORS_PROXY_URL = 'https://cors-anywhere.herokuapp.com/';
 
 const getRedirectUri = () => {
     // Return the base URL of the application for the OAuth redirect.
-    return window.location.origin + window.location.pathname;
+    if (typeof window !== 'undefined') {
+        return window.location.origin + window.location.pathname;
+    }
+    // Fallback for server-side (Node.js) execution
+    return process.env.APP_BASE_URL || 'http://localhost:3000';
 };
 
 // Export for use in the simulated backend
@@ -105,19 +110,22 @@ export const OAUTH_CONFIGS = {
         authUrl: '',
         tokenUrl: '',
         scopes: '',
-        verifyUrl: 'https://graph.facebook.com/v20.0/me/phone_numbers'
+        verifyUrl: 'https://graph.facebook.com/v20.0/me/phone_numbers' // Placeholder
     },
     telegram: {
         authUrl: '',
         tokenUrl: '',
         scopes: '',
-        verifyUrl: 'https://api.telegram.org/bot{token}/getMe'
+        verifyUrl: 'https://api.telegram.org/bot{token}/getMe' // Placeholder, requires token in URL
     },
 };
 
+// Export for use in the simulated backend and other services
 export type SocialPlatform = keyof typeof OAUTH_CONFIGS;
 
 export const redirectToAuth = (platform: SocialPlatform, clientId: string, siteId: string, accountId: string) => {
+    if (typeof window === 'undefined') return;
+
     const config = OAUTH_CONFIGS[platform];
     if (!config || !config.authUrl) {
         alert(`OAuth is not configured for ${platform} in this demo app.`);
@@ -181,7 +189,8 @@ export const redirectToAuth = (platform: SocialPlatform, clientId: string, siteI
 
 
 /**
- * Forwards the authorization code to the secure backend for token exchange.
+ * Forwards the authorization code to the Supabase Edge Function for token exchange.
+ * The frontend no longer handles client secrets.
  * @param platform The social media platform.
  * @param code The authorization code from the OAuth provider.
  * @param site The site object containing all configurations.
@@ -194,11 +203,46 @@ export const exchangeCodeForToken = async (
     site: Site,
     accountId: string
 ): Promise<{ accessToken: string }> => {
-    return secureBackend.exchangeCodeForToken(platform, code, site, accountId);
+    console.log(`[OAuth Service] Exchanging code for token via Supabase Edge Function...`);
+    
+    const codeVerifier = storageService.getPkceVerifier();
+    storageService.removePkceVerifier();
+
+    const { data, error } = await supabase.functions.invoke('oauth-token', {
+        body: {
+            code,
+            platform,
+            siteId: site.id,
+            accountId,
+            redirectUri: getRedirectUri(),
+            codeVerifier
+        }
+    });
+
+    if (error) {
+        console.error("Edge Function Error:", error);
+        throw new Error(`Token exchange failed: ${error.message || 'Unknown backend error'}`);
+    }
+
+    if (data?.error) {
+        console.error("Provider Error:", data.error);
+        throw new Error(`Provider refused token: ${data.error}`);
+    }
+
+    // Handle different provider response structures
+    const accessToken = data.access_token || data.accessToken;
+    
+    if (!accessToken) {
+        throw new Error("No access token returned from provider.");
+    }
+
+    return { accessToken };
 };
 
 
 export const handleOAuthCallback = (): { platform: string; siteId: string; accountId: string; code: string } | null => {
+    if (typeof window === 'undefined') return null;
+
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     const state = params.get('state');
@@ -236,87 +280,30 @@ export const handleOAuthCallback = (): { platform: string; siteId: string; accou
 };
 
 export const getMetaAssets = async (accessToken: string): Promise<Omit<MetaAsset, 'isEnabled'>[]> => {
-    const assets: Omit<MetaAsset, 'isEnabled'>[] = [];
-    
-    try {
-        // 1. Get Facebook Pages
-        const pagesUrl = `https://graph.facebook.com/v20.0/me/accounts?fields=id,name,instagram_business_account&access_token=${accessToken}`;
-        // Using proxyFetch to handle potential CORS issues or backend routing
-        const pagesResponse = await proxyFetch(pagesUrl);
-        
-        if (pagesResponse.ok) {
-            const pagesData = await pagesResponse.json();
-            if (pagesData.data) {
-                for (const page of pagesData.data) {
-                    assets.push({
-                        id: page.id,
-                        name: page.name,
-                        platform: 'facebook'
-                    });
-                    
-                    if (page.instagram_business_account) {
-                        // Fetch IG details (optional, but good for name)
-                        const igId = page.instagram_business_account.id;
-                        assets.push({
-                            id: igId,
-                            name: `Instagram Business (${page.name})`, // Could fetch real username
-                            platform: 'instagram'
-                        });
-                    }
-                }
-            }
-        } else {
-            console.error("Failed to fetch Facebook pages:", await pagesResponse.text());
-        }
-    } catch (e) {
-        console.error("Error fetching Meta assets:", e);
-    }
+    // In a real app, you would make two calls:
+    // 1. GET https://graph.facebook.com/me/accounts?access_token=${accessToken} to get Facebook Pages
+    // 2. For each page, GET https://graph.facebook.com/{page-id}?fields=instagram_business_account&access_token=${accessToken} to get linked IG account
 
+    console.log(`[OAuth Asset Fetch Sim] Fetching Facebook pages and Instagram accounts...`);
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Simulated data
+    const assets: Omit<MetaAsset, 'isEnabled'>[] = [
+        { id: 'page_12345', name: "My Awesome Company Page", platform: 'facebook' },
+        { id: 'ig_67890', name: "@my_brand_on_ig", platform: 'instagram' },
+        { id: 'page_54321', name: "My Other Fun Page", platform: 'facebook' },
+    ];
+
+    console.log(`[OAuth Asset Fetch Sim] Found ${assets.length} assets.`);
     return assets;
-};
-
-export const getLinkedInOrganizations = async (accessToken: string): Promise<{ id: string; name: string }[]> => {
-    const organizations: { id: string; name: string }[] = [];
-    
-    try {
-        const url = 'https://api.linkedin.com/v2/organizationalEntityAcls?q=roleAssignee&role=ADMINISTRATOR&state=APPROVED&projection=(elements*(organizationalTarget~(localizedName)))';
-        const response = await proxyFetch(url, {
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'X-Restli-Protocol-Version': '2.0.0'
-            }
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            if (data.elements) {
-                data.elements.forEach((element: any) => {
-                    const orgTarget = element.organizationalTarget;
-                    if (orgTarget) {
-                        const urnParts = orgTarget.split(':');
-                        const id = urnParts[urnParts.length - 1]; // Extract ID from urn:li:organization:123
-                        const name = element['organizationalTarget~']?.localizedName || `Organization ${id}`;
-                        organizations.push({ id, name });
-                    }
-                });
-            }
-        } else {
-            console.warn("Could not fetch LinkedIn organizations. Falling back to mock data for demo.");
-            // Fallback mock data for demo if API fails (common with CORS/Proxy limitations)
-            organizations.push({ id: 'mock-org-1', name: 'My Company Page (Mock)' });
-            organizations.push({ id: 'mock-org-2', name: 'Another Brand Page (Mock)' });
-        }
-    } catch (e) {
-        console.error("Error fetching LinkedIn organizations:", e);
-    }
-    
-    return organizations;
 };
 
 export const getMetaAdAccounts = async (accessToken: string): Promise<Omit<MetaAdsAccount, 'isEnabled'>[]> => {
     const url = `https://graph.facebook.com/me/adaccounts?fields=name,id&access_token=${accessToken}`;
+    console.log(`[OAuth Service] Fetching live Meta Ad Accounts from Graph API...`);
+
     try {
-        const response = await proxyFetch(url);
+        const response = await fetch(url);
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(`Meta Graph API error: ${errorData.error.message}`);
@@ -324,6 +311,7 @@ export const getMetaAdAccounts = async (accessToken: string): Promise<Omit<MetaA
         const data = await response.json();
         
         if (!data.data || data.data.length === 0) {
+            console.warn("No ad accounts found for this Meta user.");
             return [];
         }
         
@@ -332,6 +320,7 @@ export const getMetaAdAccounts = async (accessToken: string): Promise<Omit<MetaA
             name: acc.name,
         }));
         
+        console.log(`[OAuth Service] Found ${adAccounts.length} ad accounts.`);
         return adAccounts;
 
     } catch (error) {
@@ -342,38 +331,45 @@ export const getMetaAdAccounts = async (accessToken: string): Promise<Omit<MetaA
 
 export const getGoogleAdAccounts = async (accessToken: string): Promise<Omit<GoogleAdsAccount, 'isEnabled'>[]> => {
     const url = 'https://googleads.googleapis.com/v16/customers:listAccessibleCustomers';
+    console.log(`[OAuth Service] Attempting to fetch live Google Ads customers...`);
+
     try {
-        const response = await proxyFetch(url, {
+        const response = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
-                'developer-token': 'YOUR_DEV_TOKEN_HERE' // Placeholder, requires real dev token in environment
+                // A valid 'developer-token' header is required for this call to succeed.
             }
         });
 
         if (!response.ok) {
              const errorData = await response.json().catch(() => ({ error: { message: 'Unknown API error' } }));
-             throw new Error(`Google Ads API error: ${errorData?.error?.message}`);
+             const message = errorData?.error?.message || 'Could not parse error';
+             if (message.toLowerCase().includes('developer token')) {
+                 throw new Error(`Could not fetch Google Ads accounts: A Google Ads API developer token is required but not configured in this application.`);
+             }
+             throw new Error(`Google Ads API error: ${message}`);
         }
         
         const data = await response.json();
 
         if (!data.resourceNames || data.resourceNames.length === 0) {
-            return [];
+            return []; // No accounts found is a valid, non-error state.
         }
 
         const adAccounts: Omit<GoogleAdsAccount, 'isEnabled'>[] = data.resourceNames.map((rn: string) => {
             const id = rn.split('/')[1];
             return {
-                id: rn, 
+                id: rn, // e.g., "customers/1234567890"
                 name: `Google Ads Account (${id})`,
             };
         });
         
+        console.log(`[OAuth Service] Found ${adAccounts.length} accessible ad accounts.`);
         return adAccounts;
 
     } catch (error) {
         console.error("Failed to fetch Google Ads Accounts:", error);
-        throw error;
+        throw error; // Re-throw the error to be handled by the UI.
     }
 };
 
@@ -386,46 +382,68 @@ export const verifyConnection = async (
         return { success: false, message: 'Verification not supported for this platform.' };
     }
 
-    try {
-        // Always use proxyFetch for verification to ensure requests work across environments (Mock/Prod)
-        const url = config.verifyUrl;
-
-        const response = await proxyFetch(url, {
-            headers: { 
-                'Authorization': `Bearer ${accessToken}`,
-                'X-Requested-With': 'XMLHttpRequest'
+    // Use live API calls for ads platforms instead of simulation
+    if (platform === 'meta' || platform === 'meta_ads' || platform === 'google_ads' || platform === 'google_analytics' || platform === 'google_calendar') {
+        try {
+            const response = await fetch(`${config.verifyUrl}`, {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+            });
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                return { success: false, message: `Token verification failed: ${errorData?.error?.message || response.statusText}` };
             }
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            return { success: false, message: `Token verification failed: ${errorData?.error?.message || response.statusText}` };
-        }
-        
-        const data = await response.json();
-        const platformName = platform.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            const data = await response.json();
+            const platformName = platform.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
+            return {
+                success: true,
+                message: `${platformName} connection verified.`,
+                data: {
+                    id: data.id || data.sub, // Google uses 'sub' for user ID
+                    name: data.name,
+                    email: data.email,
+                }
+            };
+        } catch (error: any) {
+            return { success: false, message: `Network error during verification: ${error.message}` };
+        }
+    }
+    
+    console.log(`[Connection Verification Simulation] Simulating check for ${platform}...`);
+
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    if (Math.random() < 0.2) {
+        return { 
+            success: false, 
+            message: 'The API token seems to be invalid or has expired. Please reconnect the account.' 
+        };
+    }
+    
+    if (platform === 'facebook' || platform === 'instagram') {
+        console.log(`[OAuth Verify Sim] Verifying ${platform} token...`);
         return {
             success: true,
-            message: `${platformName} connection verified.`,
-            data: {
-                id: data.id || data.sub, // Google uses 'sub' for user ID
-                name: data.name,
-                email: data.email,
-                channelName: data.items?.[0]?.snippet?.title // YouTube specific
-            }
+            message: `${platform.charAt(0).toUpperCase() + platform.slice(1)} connection verified.`
         };
-    } catch (error: any) {
-        return { success: false, message: `Network error during verification: ${error.message}` };
     }
+
+    if (platform === 'youtube') {
+        return {
+            success: true,
+            message: 'Connection verified for channel "My Awesome Vlogs".',
+            data: { channelName: 'My Awesome Vlogs', channelId: 'UCxxxxxxxxxxxxxx-xxxx' }
+        };
+    }
+    
+    return { success: true, message: 'Connection verified successfully.' };
 };
 
 export const verifyCredentialBasedConnection = async (
-    platform: string,
-    account: WhatsAppAccount | TelegramAccount | SocialMediaAccount
+    platform: 'whatsapp' | 'telegram',
+    account: WhatsAppAccount | TelegramAccount
 ): Promise<{ success: boolean; message: string; }> => {
     
-    // --- WhatsApp API Logic ---
     if (platform === 'whatsapp') {
         const waAccount = account as WhatsAppAccount;
         if (!waAccount.accessToken || !waAccount.phoneNumberId) {
@@ -433,7 +451,7 @@ export const verifyCredentialBasedConnection = async (
         }
         
         try {
-            const response = await proxyFetch(`https://graph.facebook.com/v20.0/${waAccount.phoneNumberId}`, {
+            const response = await fetch(`https://graph.facebook.com/v20.0/${waAccount.phoneNumberId}`, {
                 headers: {
                     'Authorization': `Bearer ${waAccount.accessToken}`
                 }
@@ -457,7 +475,6 @@ export const verifyCredentialBasedConnection = async (
         }
     }
 
-    // --- Telegram API Logic ---
     if (platform === 'telegram') {
         const tgAccount = account as TelegramAccount;
         if (!tgAccount.botToken) {
@@ -465,7 +482,7 @@ export const verifyCredentialBasedConnection = async (
         }
         
         try {
-            const response = await proxyFetch(`https://api.telegram.org/bot${tgAccount.botToken}/getMe`);
+            const response = await fetch(`https://api.telegram.org/bot${tgAccount.botToken}/getMe`);
             const data = await response.json();
 
             if (!response.ok || !data.ok) {
@@ -482,36 +499,16 @@ export const verifyCredentialBasedConnection = async (
             return { success: false, message: `Network error: ${error.message}` };
         }
     }
-
-    // --- Generic / N8N Style Credential Logic ---
-    // This allows connecting any platform (Instagram, Facebook, Twitter, LinkedIn, etc.) using credentials
-    // by simulating the backend logic found in tools like N8N.
-    const acc = account as SocialMediaAccount;
     
-    // N8N/Automation Check: Does it look like valid credentials?
-    if (acc.username && acc.password) {
-        // Simulate network/processing delay typical of an auth request
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // Basic validation rule: non-empty credentials
-        if (acc.username.length >= 1 && acc.password.length >= 1) {
-             const platformName = platform.charAt(0).toUpperCase() + platform.slice(1);
-             return { 
-                 success: true, 
-                 message: `[Automation Engine] Verified ${platformName} credentials for @${acc.username}. Connection established via automation logic.` 
-             };
-        } else {
-             return { success: false, message: 'Invalid credentials. Please check your username and password.' };
-        }
-    }
-    
-    return { success: false, message: `Please provide a username and password for ${platform}.` };
+    return { success: false, message: 'Unsupported platform for credential verification.' };
 };
 
 export const getLatestLiveVideoFromMeta = async (pageId: string, accessToken: string): Promise<{ video_url: string, id: string } | null> => {
-    const url = `https://graph.facebook.com/v20.0/${pageId}/videos?fields=live_status,permalink_url,id,created_time&limit=10&access_token=${accessToken}`;
+    const url = `${CORS_PROXY_URL}https://graph.facebook.com/v20.0/${pageId}/videos?fields=live_status,permalink_url,id,created_time&limit=10&access_token=${accessToken}`;
+    console.log(`[OAuth Service] Fetching latest live videos from Meta Page ID: ${pageId}`);
+
     try {
-        const response = await proxyFetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(`Meta Graph API error: ${errorData.error.message}`);
@@ -519,16 +516,18 @@ export const getLatestLiveVideoFromMeta = async (pageId: string, accessToken: st
         const data = await response.json();
 
         if (!data.data || data.data.length === 0) {
+            console.warn("No videos found for this Meta page.");
             return null;
         }
 
-        // Find the most recent video that was live but is now a VOD
         const latestVod = data.data.find((video: any) => video.live_status === 'VOD');
 
         if (latestVod && latestVod.permalink_url) {
+             console.log(`[OAuth Service] Found latest completed live video: ${latestVod.id}`);
             return { video_url: latestVod.permalink_url, id: latestVod.id };
         }
 
+        console.log(`[OAuth Service] No recently completed live videos found.`);
         return null;
 
     } catch (error) {

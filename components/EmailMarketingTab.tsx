@@ -130,7 +130,7 @@ export const EmailMarketingTab: React.FC<EmailMarketingTabProps> = ({ site, onSi
                 </div>
 
                 <div className="bg-panel/50 p-4 rounded-2xl border border-border min-h-[300px]">
-                    <h3 className="text-lg font-bold text-brand-primary">Preview</h3>
+                    <h3 className="text-lg font-bold text-blue-300">Preview</h3>
                     {isLoading ? (
                          <div className="flex items-center justify-center h-48"><p className="text-text-secondary">Generating campaign...</p></div>
                     ) : result ? (

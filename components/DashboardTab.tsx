@@ -15,8 +15,8 @@ interface DashboardTabProps {
     currentUser: User;
 }
 
-// Monochrome Blue Palette for Brand Identity (#1d9bf0)
-const COLORS = ['#1d9bf0', '#1280c9', '#4dabf5', '#7dc0f8', '#aed5fb', '#dff0ff'];
+// Monochrome Blue Palette for Brand Identity
+const COLORS = ['#1DA1F2', '#0C85D0', '#0769A6', '#034E7D', '#78D5FF', '#A6E4FF'];
 
 const typeToIconMap: Record<PostHistoryItem['type'], React.FC<any>> = {
     'Keyword': DocumentTextIcon,
@@ -141,7 +141,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ site, sites, setActi
     return (
         <div className="w-full max-w-7xl mx-auto space-y-8">
             <TabGuide title="Mission Control">
-              <p>Command center for your Senior AI Engineer. Monitor your fully automated GEO & SEO campaigns running continuously on autopilot.</p>
+              <p>Get a bird's-eye view of your content operations. Monitor performance, execute quick actions, and see what's next in your pipeline.</p>
             </TabGuide>
             
             {showGettingStarted ? (

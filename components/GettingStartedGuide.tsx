@@ -26,13 +26,13 @@ const GuideStep: React.FC<{
     const iconContainerClasses = isCompleted
         ? 'bg-green-600/20 border-green-500/30'
         : isCurrent
-        ? 'bg-brand-primary/20 border-brand-primary/30 ring-4 ring-brand-primary/20'
+        ? 'bg-blue-600/20 border-blue-500/30 ring-4 ring-blue-600/20'
         : 'bg-panel-light border-border';
 
     const iconClasses = isCompleted
         ? 'text-green-400'
         : isCurrent
-        ? 'text-brand-primary'
+        ? 'text-blue-300'
         : 'text-text-secondary';
     
     const contentClasses = isCurrent || isCompleted

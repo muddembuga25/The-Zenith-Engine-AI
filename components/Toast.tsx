@@ -42,19 +42,19 @@ const Toast: React.FC<{ toast: ToastMessage; onDismiss: (id: string) => void }> 
     info: LightbulbIcon,
   };
 
-  // Strict Brand Styling: Success = Brand Blue, Error = Secondary/Alert (using brand logic or white/gray contrast), Info = Brand Blue
+  // Using specific solid backgrounds for maximum visibility and contrast
   const styles: Record<ToastType, { iconColor: string; bgIcon: string; borderColor: string, shadow: string }> = {
     success: { 
-      iconColor: 'text-brand-primary', 
-      bgIcon: 'bg-brand-primary/10',
-      borderColor: 'border-brand-primary/30',
-      shadow: 'shadow-lg shadow-brand-primary/10'
+      iconColor: 'text-emerald-500', 
+      bgIcon: 'bg-emerald-500/10',
+      borderColor: 'border-emerald-500/30',
+      shadow: 'shadow-lg shadow-emerald-900/10'
     },
     error: { 
-      iconColor: 'text-white', 
-      bgIcon: 'bg-white/10',
-      borderColor: 'border-white/30',
-      shadow: 'shadow-lg shadow-white/10'
+      iconColor: 'text-rose-500', 
+      bgIcon: 'bg-rose-500/10',
+      borderColor: 'border-rose-500/30',
+      shadow: 'shadow-lg shadow-rose-900/10'
     },
     info: { 
       iconColor: 'text-brand-primary', 

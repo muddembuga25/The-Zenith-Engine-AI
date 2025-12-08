@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import type { Site } from '../types';
 import { ChartBarIcon, LinkIcon, GoogleIcon, LightbulbIcon, XIcon } from './Icons';
@@ -7,15 +6,15 @@ const TabGuide: React.FC<{ title: string; children: React.ReactNode; }> = ({ tit
     const [isVisible, setIsVisible] = useState(true);
     if (!isVisible) return null;
     return (
-        <div className="bg-brand-primary/10 p-4 rounded-lg border border-brand-primary/30 mb-8 flex items-start gap-4 animate-fade-in">
-            <LightbulbIcon className="h-6 w-6 text-brand-primary flex-shrink-0 mt-1" />
+        <div className="bg-blue-900/20 p-4 rounded-lg border border-blue-500/30 mb-8 flex items-start gap-4 animate-fade-in">
+            <LightbulbIcon className="h-6 w-6 text-blue-300 flex-shrink-0 mt-1" />
             <div className="flex-1">
                 <h3 className="font-bold text-white">{title}</h3>
-                <div className="text-sm text-brand-primary mt-1">
+                <div className="text-sm text-blue-200/80 mt-1">
                     {children}
                 </div>
             </div>
-            <button onClick={() => setIsVisible(false)} className="p-1.5 text-brand-primary hover:text-white rounded-full">
+            <button onClick={() => setIsVisible(false)} className="p-1.5 text-blue-200/60 hover:text-white rounded-full">
                 <XIcon className="h-5 w-5" />
             </button>
         </div>
@@ -35,7 +34,7 @@ export const AdvertisingTab: React.FC<{
                 <TabGuide title="Your Advertising Command Center">
                     <p>This is where you can connect your ad accounts. Future updates will unlock AI-powered campaign creation, audience suggestions, and ad spend optimization.</p>
                 </TabGuide>
-                <div className="text-center bg-panel/50 p-12 rounded-2xl border-2 border-dashed border-brand-primary/50 max-w-2xl mx-auto">
+                <div className="text-center bg-panel/50 p-12 rounded-2xl border-2 border-dashed border-border max-w-2xl mx-auto">
                     <ChartBarIcon className="mx-auto h-12 w-12 text-text-secondary" />
                     <h3 className="mt-4 text-lg font-medium text-white">Connect Your Ad Accounts</h3>
                     <p className="mt-1 text-sm text-text-secondary">

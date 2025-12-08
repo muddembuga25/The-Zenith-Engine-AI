@@ -1,6 +1,4 @@
-
 // services/dataforseoService.ts
-import { proxyFetch } from './secureBackendSimulation';
 
 const API_URL_SERP = 'https://api.dataforseo.com/v3/serp/google/organic/live/advanced';
 const API_URL_KEYWORD_IDEAS = 'https://api.dataforseo.com/v3/keywords_data/google/keyword_ideas/live';
@@ -30,7 +28,7 @@ export const fetchOrganicResults = async (keyword: string, apiKey: string): Prom
     }];
 
     try {
-        const response = await proxyFetch(API_URL_SERP, {
+        const response = await fetch(API_URL_SERP, {
             method: 'POST',
             headers: {
                 'Authorization': `Basic ${encodedCredentials}`,
@@ -95,7 +93,7 @@ export const fetchKeywordIdeas = async (
   }];
 
   try {
-    const response = await proxyFetch(API_URL_KEYWORD_IDEAS, {
+    const response = await fetch(API_URL_KEYWORD_IDEAS, {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${encodedCredentials}`,

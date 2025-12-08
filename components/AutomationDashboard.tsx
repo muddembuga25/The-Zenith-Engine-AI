@@ -2,12 +2,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import type { Site, RecurringSchedule, LiveBroadcastClip, MetaAsset, LiveBroadcastAutomation, SocialMediaAccount } from '../types';
 import { AutomationWorkflow } from '../types';
-import { ClockIcon, CalendarDaysIcon, DocumentTextIcon, RssIcon, VideoCameraIcon, ChevronDownIcon, GoogleIcon, SparklesIcon, PenIcon, NewspaperIcon, MailIcon, LightbulbIcon, XIcon, BrainCircuitIcon, BroadcastIcon, ShareIcon, FacebookIcon, YouTubeIcon, TikTokIcon, XIconSocial, CheckCircleIcon, ExclamationTriangleIcon, PhotoIcon, ArrowPathIcon } from './Icons';
+import { ClockIcon, CalendarDaysIcon, DocumentTextIcon, RssIcon, VideoCameraIcon, ChevronDownIcon, GoogleIcon, SparklesIcon, PenIcon, NewspaperIcon, MailIcon, LightbulbIcon, XIcon, BrainCircuitIcon, BroadcastIcon, ShareIcon, FacebookIcon, YouTubeIcon, TikTokIcon, XIconSocial, CheckCircleIcon, ExclamationTriangleIcon, PhotoIcon } from './Icons';
 import { UpgradePlan } from './UpgradePlan';
 import { ScheduleManager } from './ScheduleManager';
 import { NextStepGuide } from './NextStepGuide';
-import { runScheduler } from '../services/automationService';
-import { useToast } from '../hooks/useToast';
 
 interface AutomationDashboardProps {
   site: Site;
@@ -32,9 +30,9 @@ const timezones: string[] = (() => {
 })();
 
 const planPillClasses: Record<string, string> = {
-    creator: 'bg-brand-primary/10 text-brand-primary border border-brand-primary/30',
-    pro: 'bg-white/10 text-white border border-white/20',
-    agency: 'bg-brand-primary/20 text-brand-primary border border-brand-primary/50',
+    creator: 'bg-cyan-900/30 text-cyan-300 border border-cyan-500/30',
+    pro: 'bg-brand-primary/10 text-brand-primary border border-brand-primary/30',
+    agency: 'bg-yellow-900/30 text-yellow-300 border border-yellow-500/30',
 };
 
 const WorkflowCard: React.FC<{
@@ -94,8 +92,8 @@ const TabGuide: React.FC<{ title: string; children: React.ReactNode; }> = ({ tit
 const ClipCard: React.FC<{ clip?: LiveBroadcastClip; day: string; time: string }> = ({ clip, day, time }) => {
     const statusInfo = {
         pending: { icon: ClockIcon, color: 'text-text-secondary', label: 'Pending' },
-        posted: { icon: CheckCircleIcon, color: 'text-brand-primary', label: 'Posted' },
-        error: { icon: ExclamationTriangleIcon, color: 'text-white', label: 'Error' },
+        posted: { icon: CheckCircleIcon, color: 'text-green-400', label: 'Posted' },
+        error: { icon: ExclamationTriangleIcon, color: 'text-red-400', label: 'Error' },
     };
 
     const currentStatus = statusInfo[clip?.status || 'pending'];
@@ -131,8 +129,6 @@ const ClipCard: React.FC<{ clip?: LiveBroadcastClip; day: string; time: string }
 
 export const AutomationDashboard: React.FC<AutomationDashboardProps> = ({ site, onSiteUpdate, onMultipleSiteUpdates, setActiveTab, planAccess, initialSubTab, isAgencyContext }) => {
     const [currentTime, setCurrentTime] = useState('');
-    const [isRunningNow, setIsRunningNow] = useState(false);
-    const { addToast } = useToast();
     const [activeSubTab, setActiveSubTab] = useState<AutomationWorkflow>(() => {
         if (initialSubTab && Object.values(AutomationWorkflow).includes(initialSubTab as AutomationWorkflow)) {
             return initialSubTab as AutomationWorkflow;
@@ -144,21 +140,6 @@ export const AutomationDashboard: React.FC<AutomationDashboardProps> = ({ site, 
     useEffect(() => {
         document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' });
     }, [activeSubTab]);
-
-    const handleRunAutomation = async () => {
-        setIsRunningNow(true);
-        addToast("Checking all automation schedules...", 'info');
-        try {
-            await runScheduler();
-            // We don't necessarily show success here because jobs might just be queued. 
-            // The GlobalAutomationTracker will pick them up.
-        } catch (e: any) {
-            console.error(e);
-            addToast(`Error running automation: ${e.message}`, 'error');
-        } finally {
-            setIsRunningNow(false);
-        }
-    };
 
     const subTabs = [
         { id: AutomationWorkflow.Blog, label: 'Blog Posts', icon: DocumentTextIcon },
@@ -196,20 +177,20 @@ export const AutomationDashboard: React.FC<AutomationDashboardProps> = ({ site, 
     }, [site.automationTimezone]);
 
     const blogSourceOptions: { id: string; label: string; icon: React.FC<any>; color: string }[] = [
-        { id: 'keyword', label: 'Keyword List', icon: DocumentTextIcon, color: 'text-brand-primary' },
-        { id: 'rss', label: 'RSS Feed', icon: RssIcon, color: 'text-brand-primary' },
-        { id: 'video', label: 'Video', icon: VideoCameraIcon, color: 'text-brand-primary' },
-        { id: 'google_sheet', label: 'Google Sheet', icon: GoogleIcon, color: 'text-brand-primary' },
-        { id: 'agency_agent', label: 'Agency Agent', icon: BrainCircuitIcon, color: 'text-brand-primary' },
+        { id: 'keyword', label: 'Keyword List', icon: DocumentTextIcon, color: '' },
+        { id: 'rss', label: 'RSS Feed', icon: RssIcon, color: 'text-orange-400' },
+        { id: 'video', label: 'Video', icon: VideoCameraIcon, color: 'text-red-500' },
+        { id: 'google_sheet', label: 'Google Sheet', icon: GoogleIcon, color: 'text-[#4285F4]' },
+        { id: 'agency_agent', label: 'Agency Agent', icon: BrainCircuitIcon, color: 'text-purple-400' },
     ];
-    const emailSourceOptions: { id: string; label: string; icon: React.FC<any>; color: string }[] = [ ...blogSourceOptions, { id: 'newly_published_post', label: 'New Post', icon: NewspaperIcon, color: 'text-brand-primary' }];
+    const emailSourceOptions: { id: string; label: string; icon: React.FC<any>; color: string }[] = [ ...blogSourceOptions, { id: 'newly_published_post', label: 'New Post', icon: NewspaperIcon, color: '' }];
     const socialSourceOptions: { id: string; label: string; icon: React.FC<any>; color: string }[] = [
-        { id: 'keyword', label: 'Keyword', icon: DocumentTextIcon, color: 'text-brand-primary' },
-        { id: 'rss', label: 'RSS', icon: RssIcon, color: 'text-brand-primary' },
-        { id: 'video', label: 'Video', icon: VideoCameraIcon, color: 'text-brand-primary' },
-        { id: 'google_sheet', label: 'Sheet', icon: GoogleIcon, color: 'text-brand-primary' },
-        { id: 'agency_agent', label: 'Agent', icon: BrainCircuitIcon, color: 'text-brand-primary' },
-        { id: 'newly_published_post', label: 'New Post', icon: NewspaperIcon, color: 'text-brand-primary' },
+        { id: 'keyword', label: 'Keyword', icon: DocumentTextIcon, color: '' },
+        { id: 'rss', label: 'RSS', icon: RssIcon, color: 'text-orange-400' },
+        { id: 'video', label: 'Video', icon: VideoCameraIcon, color: 'text-red-500' },
+        { id: 'google_sheet', label: 'Sheet', icon: GoogleIcon, color: 'text-[#4285F4]' },
+        { id: 'agency_agent', label: 'Agent', icon: BrainCircuitIcon, color: 'text-purple-400' },
+        { id: 'newly_published_post', label: 'New Post', icon: NewspaperIcon, color: '' },
     ];
 
     const areSocialsConnected = useMemo(() => {
@@ -244,7 +225,7 @@ export const AutomationDashboard: React.FC<AutomationDashboardProps> = ({ site, 
                 return facebookPages.length > 0 ? (
                     <select value={automation.facebookPageId} onChange={e => handleLiveAutomationUpdate('facebookPageId', e.target.value)} className="input-base w-full">
                         <option value="">Select a Facebook Page...</option>
-                        {facebookPages.map((page) => <option key={page.id} value={page.id}>{page.name}</option>)}
+                        {facebookPages.map((page: MetaAsset) => <option key={page.id} value={page.id}>{page.name}</option>)}
                     </select>
                 ) : (
                     <div className="mt-2 p-4 bg-panel rounded-lg border border-border-subtle flex items-center justify-between">
@@ -278,7 +259,7 @@ export const AutomationDashboard: React.FC<AutomationDashboardProps> = ({ site, 
                             accounts.length > 0 ? (
                                 <select value={accountId} onChange={e => handleLiveAutomationUpdate(`${platform}AccountId` as any, e.target.value)} className="input-base w-full">
                                     <option value="">Select a connected account...</option>
-                                    {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
+                                    {accounts.map((acc: SocialMediaAccount) => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
                                 </select>
                             ) : (
                                 <div className="p-4 bg-panel rounded-lg border border-border-subtle flex items-center justify-between">
@@ -305,25 +286,12 @@ export const AutomationDashboard: React.FC<AutomationDashboardProps> = ({ site, 
 
     return (
         <div className="space-y-8 max-w-6xl mx-auto">
-            <TabGuide title="Configure Autopilot Protocols">
-                <p>Direct your Senior AI Engineer. Set the strategic parameters for blog, social, and live automation, and let the engine execute complex GEO workflows 24/7.</p>
+            <TabGuide title="Automate Your Content Engine">
+                <p>This is your command center for all automations. Configure workflows for blog posts, social media, live broadcasts, and email marketing. Set triggers and let the AI work for you 24/7.</p>
             </TabGuide>
-            <div className="premium-panel p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h2 className="text-2xl font-bold text-white">Automation Workflows</h2>
-                    <p className="text-text-secondary mt-1">Configure your hands-free content engine.</p>
-                </div>
-                <button 
-                    onClick={handleRunAutomation} 
-                    disabled={isRunningNow}
-                    className="btn btn-primary flex items-center gap-2 px-4 py-2 shadow-lg shadow-brand-primary/20"
-                >
-                    {isRunningNow ? (
-                        <><svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Checking Schedules...</>
-                    ) : (
-                        <><ArrowPathIcon className="h-5 w-5" /> Run Automation Now</>
-                    )}
-                </button>
+            <div className="premium-panel p-6">
+                <h2 className="text-2xl font-bold text-white">Automation Workflows</h2>
+                <p className="text-text-secondary mt-1">Configure your hands-free content engine.</p>
             </div>
             
             <div className="border-b border-border">
@@ -350,7 +318,7 @@ export const AutomationDashboard: React.FC<AutomationDashboardProps> = ({ site, 
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-lg font-bold text-white">Blog Automation Status</h3>
                         <div className="flex items-center gap-3">
-                            <span className={`text-sm font-semibold ${site.isAutomationEnabled ? 'text-brand-primary' : 'text-text-secondary'}`}>{site.isAutomationEnabled ? 'Enabled' : 'Disabled'}</span>
+                            <span className={`text-sm font-semibold ${site.isAutomationEnabled ? 'text-green-400' : 'text-text-secondary'}`}>{site.isAutomationEnabled ? 'Enabled' : 'Disabled'}</span>
                             <label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={site.isAutomationEnabled} onChange={e => onSiteUpdate('isAutomationEnabled', e.target.checked)} /><div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div></label>
                         </div>
                     </div>
@@ -389,7 +357,7 @@ export const AutomationDashboard: React.FC<AutomationDashboardProps> = ({ site, 
                                         <div className="flex items-center justify-between mb-4">
                                             <h4 className="font-semibold text-white">4. Timing & Timezone</h4>
                                             <div className="flex items-center gap-2">
-                                                 <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse"></div>
+                                                 <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
                                                  <span className="text-xs font-mono text-text-secondary">{currentTime}</span>
                                             </div>
                                         </div>
@@ -405,7 +373,7 @@ export const AutomationDashboard: React.FC<AutomationDashboardProps> = ({ site, 
                                                     >
                                                         {Object.entries(groupedTimezones).map(([region, tzs]) => (
                                                             <optgroup key={region} label={region}>
-                                                                {(tzs as string[]).map(tz => <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>)}
+                                                                {tzs.map(tz => <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>)}
                                                             </optgroup>
                                                         ))}
                                                     </select>
@@ -492,12 +460,12 @@ export const AutomationDashboard: React.FC<AutomationDashboardProps> = ({ site, 
                 <div className="p-6 premium-panel animate-fade-in">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 bg-brand-primary/10 rounded-xl text-brand-primary shadow-glow"><VideoCameraIcon className="h-6 w-6" /></div>
+                            <div className="p-3 bg-red-900/30 rounded-xl text-red-500 shadow-glow"><VideoCameraIcon className="h-6 w-6" /></div>
                             <div><h3 className="text-lg font-bold text-white">Live Broadcast Automation</h3><p className="text-sm text-text-secondary">Repurpose live streams from social media.</p></div>
                         </div>
                         <div className="flex items-center gap-3">
-                            <span className={`text-sm font-semibold ${automation.isEnabled ? 'text-brand-primary' : 'text-text-secondary'}`}>{automation.isEnabled ? 'Active' : 'Inactive'}</span>
-                            <label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={automation.isEnabled} onChange={e => handleLiveAutomationUpdate('isEnabled', e.target.checked)} /><div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div></label>
+                            <span className={`text-sm font-semibold ${automation.isEnabled ? 'text-green-400' : 'text-text-secondary'}`}>{automation.isEnabled ? 'Active' : 'Inactive'}</span>
+                            <label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={automation.isEnabled} onChange={e => handleLiveAutomationUpdate('isEnabled', e.target.checked)} /><div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div></label>
                         </div>
                     </div>
                     {automation.isEnabled && (
@@ -590,7 +558,7 @@ export const AutomationDashboard: React.FC<AutomationDashboardProps> = ({ site, 
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-lg font-bold text-white">Email Marketing Automation</h3>
                         <div className="flex items-center gap-3">
-                            <span className={`text-sm font-semibold ${site.isEmailMarketingAutomationEnabled ? 'text-brand-primary' : 'text-text-secondary'}`}>{site.isEmailMarketingAutomationEnabled ? 'Enabled' : 'Disabled'}</span>
+                            <span className={`text-sm font-semibold ${site.isEmailMarketingAutomationEnabled ? 'text-green-400' : 'text-text-secondary'}`}>{site.isEmailMarketingAutomationEnabled ? 'Enabled' : 'Disabled'}</span>
                             <label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={site.isEmailMarketingAutomationEnabled} onChange={e => onSiteUpdate('isEmailMarketingAutomationEnabled', e.target.checked)} /><div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div></label>
                         </div>
                     </div>
@@ -632,7 +600,7 @@ export const AutomationDashboard: React.FC<AutomationDashboardProps> = ({ site, 
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-lg font-bold text-white">Creator Studio Automation</h3>
                         <div className="flex items-center gap-3">
-                            <span className={`text-sm font-semibold ${site.isCreatorStudioAutomationEnabled ? 'text-brand-primary' : 'text-text-secondary'}`}>{site.isCreatorStudioAutomationEnabled ? 'Enabled' : 'Disabled'}</span>
+                            <span className={`text-sm font-semibold ${site.isCreatorStudioAutomationEnabled ? 'text-green-400' : 'text-text-secondary'}`}>{site.isCreatorStudioAutomationEnabled ? 'Enabled' : 'Disabled'}</span>
                             <label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={site.isCreatorStudioAutomationEnabled ?? false} onChange={e => onSiteUpdate('isCreatorStudioAutomationEnabled', e.target.checked)} /><div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div></label>
                         </div>
                     </div>

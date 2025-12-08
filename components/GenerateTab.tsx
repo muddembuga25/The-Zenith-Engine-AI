@@ -401,7 +401,7 @@ export const GenerateTab: React.FC<GenerateTabProps> = ({ site, onSiteUpdate, on
                         ) : (
                             <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
                                 {agentPosts.map((post) => (
-                                    <div key={post.id} className={`p-4 rounded-lg border ${post.status === 'complete' ? 'bg-panel-light border-border opacity-60' : 'bg-panel border-border-subtle hover:border-brand-primary/50'} transition-all`}>
+                                    <div key={post.id} className={`p-4 rounded-lg border ${post.status === 'complete' ? 'bg-panel-light border-border opacity-60' : 'bg-panel border-border-subtle hover:border-purple-500/50'} transition-all`}>
                                         <h4 className="font-semibold text-text-primary mb-1">{post.topic}</h4>
                                         <p className="text-xs text-text-secondary mb-3">{post.reasoning || "Discovered by AI Agent based on trends."}</p>
                                         <div className="flex justify-between items-center">
@@ -409,7 +409,7 @@ export const GenerateTab: React.FC<GenerateTabProps> = ({ site, onSiteUpdate, on
                                             <button 
                                                 onClick={() => onGenerateAndScore(post.topic, 'agency_agent', { value: { agentPostId: post.id, topic: post.topic } }, site)}
                                                 disabled={post.status === 'complete'}
-                                                className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${post.status === 'complete' ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-brand-primary text-white hover:bg-brand-primary-hover'}`}
+                                                className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${post.status === 'complete' ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-purple-600 text-white hover:bg-purple-500'}`}
                                             >
                                                 {post.status === 'complete' ? 'Generated' : 'Approve & Generate'}
                                             </button>

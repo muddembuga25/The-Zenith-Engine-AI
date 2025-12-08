@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { Site, ApiKeys, PostHistoryItem, CreatorProject, SocialMediaAccount, WhatsAppAccount, TelegramAccount } from '../types';
 import { GoogleGenAI } from "@google/genai";
@@ -21,13 +22,13 @@ const Stepper: React.FC<{ currentPhase: number, phases: {num: number, name: stri
                 <li key={phase.name} className={`relative ${phaseIdx !== phases.length - 1 ? 'pr-8 sm:pr-20' : ''}`}>
                     {phase.num < currentPhase ? (
                         <>
-                            <div className="absolute inset-0 flex items-center" aria-hidden="true"><div className="h-0.5 w-full bg-brand-primary" /></div>
-                            <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-brand-primary"><CheckCircleIcon className="h-5 w-5 text-white" aria-hidden="true" /></div>
+                            <div className="absolute inset-0 flex items-center" aria-hidden="true"><div className="h-0.5 w-full bg-blue-600" /></div>
+                            <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-blue-600"><CheckCircleIcon className="h-5 w-5 text-white" aria-hidden="true" /></div>
                         </>
                     ) : phase.num === currentPhase ? (
                         <>
                             <div className="absolute inset-0 flex items-center" aria-hidden="true"><div className="h-0.5 w-full bg-gray-700" /></div>
-                            <div className="relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-brand-primary bg-panel"><span className="h-2.5 w-2.5 rounded-full bg-brand-primary" aria-hidden="true" /></div>
+                            <div className="relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-blue-600 bg-panel"><span className="h-2.5 w-2.5 rounded-full bg-blue-600" aria-hidden="true" /></div>
                         </>
                     ) : (
                         <>

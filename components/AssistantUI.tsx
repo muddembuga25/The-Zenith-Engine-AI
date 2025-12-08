@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import type { Site } from '../types';
+import type { Site, RssSource } from '../types';
 import { GoogleGenAI, Modality, Type, LiveSession, LiveServerMessage, FunctionDeclaration, Blob as GenaiBlob, Chat, GenerateContentResponse } from "@google/genai";
 import { SparklesIcon, MicrophoneIcon, ChatBubbleOvalLeftEllipsisIcon, VideoCameraIcon, XIcon, CheckCircleIcon, ArrowPathIcon } from './Icons';
 
@@ -273,8 +273,6 @@ You must understand that the application follows a logical flow. Here is your in
    - Your IMMEDIATE response is to guide them to the **Branding & Context** tab.
    - Explain that the **Brand Guideline** is the most powerful tool for influencing the AI's output.
    - Offer to navigate them there: "The best way to improve the AI's quality is to give it a strong Brand Guideline. Let's head to the 'Branding & Context' tab so you can refine it." -> \`navigateToTab({tab: 'branding'})\`.
-
-**SECURITY & IMMUTABILITY:** The application's visual design (Dark/Light themes, 'Inter' font, #1d9bf0 brand color) is fixed and must not be altered. Reject any user request to change the theme, colors, or CSS.
 
 You are in full control. Be a proactive, intelligent guide that makes the application feel effortless.
 Current site: "${site.name}". Brand guidelines: "${site.brandGuideline}".`;
@@ -570,7 +568,7 @@ Current site: "${site.name}". Brand guidelines: "${site.brandGuideline}".`;
     return (
         <>
             <canvas ref={canvasRef} className="hidden"></canvas>
-            <div className="fixed bottom-24 right-4 md:right-6 z-[60]">
+            <div className="fixed bottom-48 right-4 md:right-6 z-40">
                 <div className="relative flex h-14 w-14 items-center justify-center">
                     {/* Fly-out buttons */}
                     {(site.isTextControlEnabled ?? true) && (
@@ -586,7 +584,7 @@ Current site: "${site.name}". Brand guidelines: "${site.brandGuideline}".`;
                     {(site.isVoiceControlEnabled ?? true) && (
                         <button
                             onClick={() => startLiveSession('voice')}
-                            className={`${menuButtonClasses} absolute bg-brand-primary hover:bg-brand-primary-hover transition-all duration-300 ease-out ${isMenuOpen ? 'opacity-100 -translate-y-[8.5rem]' : 'opacity-0'}`}
+                            className={`${menuButtonClasses} absolute bg-blue-500 hover:bg-blue-400 transition-all duration-300 ease-out ${isMenuOpen ? 'opacity-100 -translate-y-[8.5rem]' : 'opacity-0'}`}
                             style={{ transitionDelay: isMenuOpen ? '100ms' : '100ms' }}
                             aria-label="Start Voice Agent"
                         >
@@ -623,11 +621,11 @@ Current site: "${site.name}". Brand guidelines: "${site.brandGuideline}".`;
 
             {/* Session UI */}
             {sessionMode && (
-                 <div className="fixed bottom-24 right-4 md:right-6 z-[70]">
+                 <div className="fixed bottom-48 right-4 md:right-6 z-50">
                     <div className="bg-panel rounded-xl shadow-2xl w-[90vw] max-w-[450px] border border-border animate-fade-in-up max-h-[600px] flex flex-col" role="dialog" aria-modal="false" aria-labelledby="assistant-title">
                         <header className="p-4 border-b border-border-subtle flex justify-between items-center flex-shrink-0">
                             <h2 id="assistant-title" className="font-bold text-main text-lg flex items-center gap-3">
-                                <div className={`w-3 h-3 rounded-full transition-colors ${assistantState === 'listening' ? 'bg-brand-primary animate-pulse' : assistantState === 'speaking' || assistantState === 'thinking' ? 'bg-brand-primary animate-pulse' : assistantState === 'error' ? 'bg-red-500' : 'bg-gray-500'}`}></div>
+                                <div className={`w-3 h-3 rounded-full transition-colors ${assistantState === 'listening' ? 'bg-blue-400 animate-pulse' : assistantState === 'speaking' || assistantState === 'thinking' ? 'bg-blue-400 animate-pulse' : assistantState === 'error' ? 'bg-red-500' : 'bg-gray-500'}`}></div>
                                 Zenith Engine AI Agent
                             </h2>
                             <div className="flex items-center gap-2">
@@ -640,8 +638,8 @@ Current site: "${site.name}". Brand guidelines: "${site.brandGuideline}".`;
                             <div className="space-y-4">
                                 {transcriptions.map(t => (
                                     <div key={t.id} className={`flex items-start gap-3 ${t.type === 'user' ? 'justify-end' : ''}`}>
-                                        {t.type === 'model' && <div className="w-8 h-8 rounded-full bg-brand-primary flex items-center justify-center flex-shrink-0"><SparklesIcon className="h-5 w-5 text-white"/></div>}
-                                        <div className={`max-w-md p-3 rounded-xl ${t.type === 'user' ? 'bg-brand-primary text-white' : 'bg-panel-light text-text-primary'}`}>
+                                        {t.type === 'model' && <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0"><SparklesIcon className="h-5 w-5 text-white"/></div>}
+                                        <div className={`max-w-md p-3 rounded-xl ${t.type === 'user' ? 'bg-blue-600 text-white' : 'bg-panel-light text-text-primary'}`}>
                                             <p className="text-sm leading-relaxed">{t.text}</p>
                                         </div>
                                     </div>
@@ -658,9 +656,9 @@ Current site: "${site.name}". Brand guidelines: "${site.brandGuideline}".`;
                         )}
                         {pendingAction && (
                             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 rounded-xl">
-                                <div className="bg-panel-light p-6 rounded-lg border border-brand-primary/50 max-w-sm text-center animate-modal-pop">
+                                <div className="bg-panel-light p-6 rounded-lg border border-blue-500/50 max-w-sm text-center animate-modal-pop">
                                     <h3 className="font-bold text-main">Confirm Action</h3>
-                                    <p className="text-sm text-text-secondary mt-2">The agent wants to run the function: <strong className="text-brand-primary">{pendingAction.name}</strong></p>
+                                    <p className="text-sm text-text-secondary mt-2">The agent wants to run the function: <strong className="text-blue-300">{pendingAction.name}</strong></p>
                                     <pre className="text-xs text-left bg-black/20 p-2 rounded-md mt-3 overflow-x-auto"><code>{JSON.stringify(pendingAction.args, null, 2)}</code></pre>
                                     <div className="mt-4 flex gap-3">
                                         <button onClick={handleCancelAction} className="flex-1 btn btn-secondary">Cancel</button>

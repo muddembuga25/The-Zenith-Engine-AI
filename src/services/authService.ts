@@ -1,2 +1,1 @@
-// This file is deprecated. Please use /services/authService.ts instead.
-export {};
+// This file is deprecated. Please use services/authService.ts.

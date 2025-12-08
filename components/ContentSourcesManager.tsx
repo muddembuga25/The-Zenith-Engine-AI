@@ -14,9 +14,9 @@ type SourceType = 'rss' | 'video' | 'google_sheet';
 type AnySource = (RssSource | VideoSource | GoogleSheetSource) & { sourceType: SourceType };
 
 const sourceTypes: Record<SourceType, { label: string; icon: React.FC<any>; color: string }> = {
-    rss: { label: 'RSS Feed', icon: RssIcon, color: 'text-brand-primary' },
-    video: { label: 'Video Source', icon: VideoCameraIcon, color: 'text-brand-primary' },
-    google_sheet: { label: 'Google Sheet', icon: GoogleIcon, color: 'text-brand-primary' },
+    rss: { label: 'RSS Feed', icon: RssIcon, color: 'text-orange-400' },
+    video: { label: 'Video Source', icon: VideoCameraIcon, color: 'text-red-500' },
+    google_sheet: { label: 'Google Sheet', icon: GoogleIcon, color: 'text-blue-500' },
 };
 
 export const ContentSourcesManager: React.FC<ContentSourcesManagerProps> = ({ site, onSiteUpdate, onClose }) => {
@@ -166,7 +166,7 @@ export const ContentSourcesManager: React.FC<ContentSourcesManagerProps> = ({ si
                             <div key={source.id} className="bg-panel-light p-3 rounded-xl border border-border-subtle hover:border-brand-primary/30 transition-all flex items-center justify-between group">
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <div className={`p-1.5 rounded-md bg-panel border border-border ${meta.color.replace('text-', 'bg-').replace('primary', 'primary/10')}`}>
+                                        <div className={`p-1.5 rounded-md bg-panel border border-border ${meta.color.replace('text-', 'bg-').replace('400', '900/20').replace('500', '900/20')}`}>
                                             <meta.icon className={`h-4 w-4 ${meta.color}`} />
                                         </div>
                                         <span className="font-semibold text-text-primary truncate">{source.name}</span>

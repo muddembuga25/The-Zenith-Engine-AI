@@ -1,8 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import type { User, SubscriptionPlan, GlobalSettings } from '../types';
-import { CheckCircleIcon, LightbulbIcon, XIcon, CreditCardIcon, ArrowRightIcon, UserIcon, PenIcon, SparklesIcon, BuildingOffice2Icon, LockClosedIcon, Cog6ToothIcon } from './Icons';
-import { initiatePaymentTransaction, verifyPaymentTransaction } from '../services/secureBackendSimulation';
+import { CheckCircleIcon, LightbulbIcon, XIcon, CreditCardIcon, ArrowRightIcon, UserIcon, PenIcon, SparklesIcon, BuildingOffice2Icon } from './Icons';
 
 declare global {
     interface Window {
@@ -15,30 +14,11 @@ interface SubscriptionPageProps {
     onUpdatePlan: (plan: SubscriptionPlan, cycle?: 'monthly' | 'yearly') => Promise<void>;
 }
 
-type Currency = 'USD' | 'ZAR';
-
-const pricingData = {
-    free: {
-        USD: { monthly: '$0', yearly: '$0' },
-        ZAR: { monthly: 'R0', yearly: 'R0' }
-    },
-    creator: {
-        USD: { monthly: '$39', yearly: '$390' },
-        ZAR: { monthly: 'R699', yearly: 'R6,990' } // Optimized local pricing
-    },
-    pro: {
-        USD: { monthly: '$99', yearly: '$990' },
-        ZAR: { monthly: 'R1,799', yearly: 'R17,990' }
-    },
-    agency: {
-        USD: { monthly: '$249', yearly: '$2490' },
-        ZAR: { monthly: 'R4,499', yearly: 'R44,990' }
-    }
-};
-
 const plans: {
     name: SubscriptionPlan;
     title: string;
+    priceMonthly: string;
+    priceYearly: string;
     yearlyDiscount: string;
     description: string;
     features: string[];
@@ -49,6 +29,8 @@ const plans: {
     {
         name: 'free',
         title: 'Free',
+        priceMonthly: '$0',
+        priceYearly: '$0',
         yearlyDiscount: '',
         description: 'The Test Drive. Your entry point to see the core power of the AI.',
         features: [
@@ -65,6 +47,8 @@ const plans: {
     {
         name: 'creator',
         title: 'Creator',
+        priceMonthly: '$39',
+        priceYearly: '$390',
         yearlyDiscount: 'Save 16%',
         description: "The Solopreneur's Powerhouse. For individuals and bloggers focused on growing a single brand.",
         features: [
@@ -83,6 +67,8 @@ const plans: {
     {
         name: 'pro',
         title: 'Pro',
+        priceMonthly: '$99',
+        priceYearly: '$990',
         yearlyDiscount: 'Save 16%',
         description: "The Marketing Professional's Garage. For serious marketers managing multiple projects.",
         features: [
@@ -102,6 +88,8 @@ const plans: {
     {
         name: 'agency',
         title: 'Agency',
+        priceMonthly: '$249',
+        priceYearly: '$2490',
         yearlyDiscount: 'Save 16%',
         description: 'Unlimited scale for agencies and power users managing multiple clients.',
         features: [
@@ -154,64 +142,22 @@ const planDetailsForIcons: Record<SubscriptionPlan, { icon: React.FC<any>; color
     },
 };
 
-// Gateway Logic Strategy
-const getGatewayForCurrency = (settings: GlobalSettings | null, currency: Currency): 'paystack' | 'payfast' | 'stripe' | 'paypal' | 'wise' | 'payoneer' | null => {
-    if (!settings) return null;
-    
-    // Explicit split: ZAR uses Local gateway, USD uses International gateway
-    if (currency === 'ZAR') {
-        // Default to PayFast for local if not set, as it's the recommended one
-        return settings.localPaymentGateway || 'payfast';
-    } else {
-        // Default to PayPal for international if not set, as it requires no subscription
-        return settings.internationalPaymentGateway || 'paypal';
-    }
-};
-
-const getPaymentMode = (settings: GlobalSettings | null, currency: Currency): 'live' | 'test' | 'unknown' => {
-    const gateway = getGatewayForCurrency(settings, currency);
-    if (!gateway) return 'unknown';
-    
-    if (gateway === 'stripe') {
-        return settings?.stripeConnection?.publicKey?.startsWith('pk_live_') ? 'live' : 'test';
-    }
-    if (gateway === 'paystack') {
-        return settings?.paystackConnection?.publicKey?.startsWith('pk_live_') ? 'live' : 'test';
-    }
-    if (gateway === 'paypal') return 'live'; 
-    if (gateway === 'payfast') return 'live'; 
-    return 'unknown';
-};
-
 const PlanSelectionView: React.FC<{
     currentUser: User;
     onUpdatePlan: (plan: SubscriptionPlan, cycle?: 'monthly' | 'yearly') => Promise<void>;
 }> = ({ currentUser, onUpdatePlan }) => {
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>(currentUser.subscriptionCycle || 'monthly');
-    const [currency, setCurrency] = useState<Currency>('USD');
     const [isLoading, setIsLoading] = useState<SubscriptionPlan | null>(null);
     const [isRedirecting, setIsRedirecting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [globalSettings, setGlobalSettings] = useState<GlobalSettings | null>(null);
 
     useEffect(() => {
+        // In a real app with a backend, these would be fetched.
+        // For this frontend-only app, we retrieve them from localStorage.
         const storedSettings = localStorage.getItem('zenith-engine-ai-global-settings');
         if (storedSettings) {
             setGlobalSettings(JSON.parse(storedSettings));
-        }
-        
-        // Automatic Regional Currency Detection
-        try {
-            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            // Standard IANA time zone for South Africa
-            if (tz === 'Africa/Johannesburg') {
-                setCurrency('ZAR');
-            } else {
-                setCurrency('USD');
-            }
-        } catch (e) {
-            // Default to USD on error
-            setCurrency('USD');
         }
     }, []);
 
@@ -219,13 +165,12 @@ const PlanSelectionView: React.FC<{
     const planLevels: Record<SubscriptionPlan, number> = { free: 0, creator: 1, pro: 2, agency: 3 };
     const currentLevel = currentPlan ? planLevels[currentPlan] : -1;
     const isOnTrial = !!currentUser.trialEndsAt && currentUser.subscriptionPlan === 'agency';
-    const paymentMode = getPaymentMode(globalSettings, currency);
+
 
     const handleUpdate = async (plan: SubscriptionPlan) => {
         setIsLoading(plan);
         setError(null);
 
-        // Free plan or admin bypass
         if (plan === 'free' || (currentPlan && planLevels[plan] < currentLevel) || currentUser.isAdmin) {
             try {
                 const cycleToUpdate = plan === 'free' ? undefined : billingCycle;
@@ -238,91 +183,143 @@ const PlanSelectionView: React.FC<{
             return;
         }
 
-        // Get Price
-        const priceData = pricingData[plan][currency];
-        const priceString = billingCycle === 'monthly' ? priceData.monthly : priceData.yearly;
-        const amount = parseInt(priceString.replace(/[^0-9]/g, '')); // Clean string to number
-
-        // Determine the gateway to use based on currency and active settings
-        const targetGateway = getGatewayForCurrency(globalSettings, currency);
-        
-        if (!targetGateway) {
-            setError(`No payment gateway configured for ${currency}. Please contact support.`);
+        const planDetails = plans.find(p => p.name === plan);
+        if (!planDetails) {
+            setError("Selected plan details not found.");
             setIsLoading(null);
             return;
         }
 
-        try {
-            // Call the secure backend simulation to initiate the transaction
-            const response = await initiatePaymentTransaction({
-                gateway: targetGateway,
-                amount,
-                currency,
-                plan,
-                billingCycle,
-                email: currentUser.email,
-                globalSettings
-            });
+        const priceString = billingCycle === 'monthly' ? planDetails.priceMonthly : planDetails.priceYearly;
+        const amount = parseInt(priceString.replace('$', ''));
 
-            if (!response.success) {
-                throw new Error(response.message || "Payment initialization failed.");
-            }
+        // Gateway logic
+        const activeGateway = globalSettings?.activePaymentGateway;
+        const isPaystackConnected = activeGateway === 'paystack' && globalSettings?.paystackConnection?.status === 'connected';
+        const isPayfastConnected = activeGateway === 'payfast' && globalSettings?.payfastConnection?.status === 'connected';
+        const isWiseConnected = activeGateway === 'wise' && globalSettings?.wiseConnection?.status === 'connected';
+        const isPayoneerConnected = activeGateway === 'payoneer' && globalSettings?.payoneerConnection?.status === 'connected';
+        const isStripeConnected = activeGateway === 'stripe' && globalSettings?.stripeConnection?.status === 'connected';
+        const isPayPalConnected = activeGateway === 'paypal' && globalSettings?.payPalConnection?.status === 'connected';
 
-            // Handle specific gateway flows
-            if (targetGateway === 'paystack') {
-                if (window.PaystackPop) {
-                    const handler = window.PaystackPop.setup({
-                        key: globalSettings?.paystackConnection?.publicKey,
-                        email: currentUser.email,
-                        amount: amount * 100, // Kobo
-                        currency: currency,
-                        ref: response.reference || `zenith_${crypto.randomUUID()}`,
-                        callback: (res: any) => {
-                            onUpdatePlan(plan, billingCycle);
-                            setIsLoading(null);
-                        },
-                        onClose: () => setIsLoading(null)
-                    });
-                    handler.openIframe();
-                } else {
-                    // Fallback to redirect if popup fails or is preferred by response
-                    if (response.redirectUrl) window.location.href = response.redirectUrl;
-                }
-            } 
-            else if (targetGateway === 'payfast' && response.formFields) {
-                // Construct and submit form
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = 'https://www.payfast.co.za/eng/process';
-                form.style.display = 'none';
-                for (const key in response.formFields) {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = key;
-                    input.value = response.formFields[key];
-                    form.appendChild(input);
-                }
-                document.body.appendChild(form);
-                setIsRedirecting(true);
-                form.submit();
-            }
-            else if (response.redirectUrl) {
-                // Standard Redirect (Stripe, PayPal)
-                setIsRedirecting(true);
-                window.location.href = response.redirectUrl;
-            }
-            else if (targetGateway === 'wise' || targetGateway === 'payoneer') {
-                // Manual/Invoice flow
-                alert(response.message);
-                setIsLoading(null);
-            }
 
-        } catch (e: any) {
-            console.error("Payment Error:", e);
-            setError(e.message || "Payment failed to initialize.");
+        if (!isPaystackConnected && !isPayfastConnected && !isWiseConnected && !isPayoneerConnected && !isStripeConnected && !isPayPalConnected) {
+            setError("No payment gateway is configured for this site. Please contact the administrator.");
             setIsLoading(null);
-            setIsRedirecting(false);
+            return;
         }
+        
+        setIsRedirecting(true);
+
+        // --- Paystack Flow ---
+        if (isPaystackConnected) {
+            const paystackOptions = {
+                key: globalSettings.paystackConnection!.publicKey,
+                email: currentUser.email,
+                amount: amount * 100, // Paystack expects amount in lowest currency unit (e.g., kobo/cents)
+                ref: `zenith_${crypto.randomUUID()}`,
+                callback: (response: any) => {
+                    console.log("Paystack payment successful, reference:", response.reference);
+                    onUpdatePlan(plan, billingCycle);
+                    setIsLoading(null);
+                    setIsRedirecting(false);
+                },
+                onClose: () => {
+                    console.log("Paystack payment popup closed.");
+                    setIsLoading(null);
+                    setIsRedirecting(false);
+                }
+            };
+
+            const handler = window.PaystackPop.setup(paystackOptions);
+            handler.openIframe();
+            return;
+        }
+
+        // --- Payfast Flow ---
+        if (isPayfastConnected) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = 'https://www.payfast.co.za/eng/process';
+            form.style.display = 'none';
+
+            const fields = {
+                merchant_id: globalSettings.payfastConnection!.merchantId,
+                merchant_key: globalSettings.payfastConnection!.merchantKey,
+                return_url: `${window.location.origin}${window.location.pathname}?payment_status=success&plan=${plan}&cycle=${billingCycle}`,
+                cancel_url: `${window.location.origin}${window.location.pathname}?payment_status=cancelled`,
+                notify_url: `${window.location.origin}${window.location.pathname}?payment_notify=true`, // Required by Payfast
+                name_first: currentUser.firstName || '',
+                name_last: currentUser.lastName || '',
+                email_address: currentUser.email,
+                amount: amount.toFixed(2),
+                item_name: `Zenith Engine AI - ${planDetails.title} (${billingCycle})`,
+            };
+            
+            for (const key in fields) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = (fields as any)[key];
+                form.appendChild(input);
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
+            return;
+        }
+        
+        // --- Wise Flow (Simulated) ---
+        if (isWiseConnected) {
+            console.log(`[Wise Sim] Initiating payment for plan ${plan} (${billingCycle}).`);
+            setTimeout(() => {
+                console.log("[Wise Sim] Payment successful.");
+                onUpdatePlan(plan, billingCycle);
+                setIsLoading(null);
+                setIsRedirecting(false);
+            }, 3000); // Simulate 3 second payment process
+            return;
+        }
+
+        // --- Payoneer Flow (Simulated) ---
+        if (isPayoneerConnected) {
+            console.log(`[Payoneer Sim] Initiating payment for plan ${plan} (${billingCycle}).`);
+            setTimeout(() => {
+                console.log("[Payoneer Sim] Payment successful.");
+                onUpdatePlan(plan, billingCycle);
+                setIsLoading(null);
+                setIsRedirecting(false);
+            }, 3000); // Simulate 3 second payment process
+            return;
+        }
+
+        // --- Stripe Flow (Simulated) ---
+        if (isStripeConnected) {
+            console.log(`[Stripe Sim] Initiating payment for plan ${plan} (${billingCycle}).`);
+            setTimeout(() => {
+                console.log("[Stripe Sim] Payment successful.");
+                onUpdatePlan(plan, billingCycle);
+                setIsLoading(null);
+                setIsRedirecting(false);
+            }, 3000); // Simulate 3 second payment process
+            return;
+        }
+
+        // --- PayPal Flow (Simulated) ---
+        if (isPayPalConnected) {
+            console.log(`[PayPal Sim] Redirecting to PayPal for plan ${plan} (${billingCycle}).`);
+            setTimeout(() => {
+                console.log("[PayPal Sim] Payment successful.");
+                onUpdatePlan(plan, billingCycle);
+                setIsLoading(null);
+                setIsRedirecting(false);
+            }, 3000); // Simulate 3 second payment process
+            return;
+        }
+        
+        setError("Could not initiate payment. Please check gateway configuration.");
+        setIsLoading(null);
+        setIsRedirecting(false);
     };
 
     const getCtaText = (plan: typeof plans[0]) => {
@@ -333,6 +330,7 @@ const PlanSelectionView: React.FC<{
             return `Subscribe to ${plan.title}`;
         }
         
+        // Non-trial user logic
         if (plan.name === currentPlan) {
             if (plan.name !== 'free' && billingCycle !== (currentUser.subscriptionCycle || 'monthly')) {
                 return `Switch to ${billingCycle === 'monthly' ? 'Monthly' : 'Yearly'}`;
@@ -340,22 +338,25 @@ const PlanSelectionView: React.FC<{
             return 'Your Current Plan';
         }
     
-        if (currentPlan) {
+        if (currentPlan) { // User has a plan
             if (planLevel < currentLevel) {
                 return plan.name === 'free' ? 'Downgrade to Free' : 'Downgrade Unavailable';
             }
             return `Upgrade to ${plan.title}`;
         }
         
-        if (plan.name === 'free') return 'Start for Free';
+        // User has no plan yet
+        if (plan.name === 'free') {
+            return 'Start for Free';
+        }
         return `Start with ${plan.title}`;
     };
 
     return (
         <>
             {error && (
-                <div className="bg-red-900/50 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg text-sm mb-6 flex items-center gap-2 animate-fade-in">
-                    <XIcon className="h-4 w-4" /> {error}
+                <div className="bg-red-900/50 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg text-sm mb-6">
+                    {error}
                 </div>
             )}
             <div className="text-center mb-12">
@@ -363,57 +364,33 @@ const PlanSelectionView: React.FC<{
                     Find the Perfect Plan
                 </h1>
                 <p className="mt-4 text-lg text-text-secondary max-w-2xl mx-auto">
-                    Pricing tailored for global reach and local accessibility.
+                    From your first post to a global content empire, we have a plan that fits your needs.
                 </p>
-                
-                {/* Currency & Cycle Controls */}
-                <div className="mt-8 flex flex-col items-center gap-6">
-                    <div className="flex gap-2">
-                        {/* Region Indicator */}
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-panel border border-border text-xs font-semibold text-text-secondary shadow-sm">
-                            {currency === 'ZAR' ? (
-                                <><span>🇿🇦</span> Region: South Africa (ZAR)</>
-                            ) : (
-                                <><span>🇺🇸</span> Region: International (USD)</>
-                            )}
-                        </div>
-                        
-                        {/* Payment Mode Indicator */}
-                        {paymentMode !== 'unknown' && (
-                            <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border ${paymentMode === 'live' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'}`}>
-                                {paymentMode === 'live' ? <LockClosedIcon className="h-3 w-3" /> : <Cog6ToothIcon className="h-3 w-3" />}
-                                {paymentMode === 'live' ? 'Secure Live Payment' : 'Test Mode Active'}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Cycle Toggle */}
-                    <div className="flex items-center gap-4">
-                        <span className={`font-semibold transition-colors ${billingCycle === 'monthly' ? 'text-main' : 'text-text-secondary'}`}>
-                            Monthly
-                        </span>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only peer" checked={billingCycle === 'yearly'} onChange={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')} />
-                            <div className="w-11 h-6 bg-gray-600/50 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
-                        </label>
-                        <span className={`font-semibold transition-colors ${billingCycle === 'yearly' ? 'text-main' : 'text-text-secondary'}`}>
-                            Yearly
-                        </span>
-                        <span className={`ml-2 bg-brand-primary/20 text-brand-primary text-xs font-bold px-2 py-1 rounded-full transition-opacity duration-300 ${billingCycle === 'yearly' ? 'opacity-100' : 'opacity-0'}`}>
-                            SAVE 16%
-                        </span>
-                    </div>
+                <div className="mt-8 flex justify-center items-center gap-4">
+                     <span className={`font-semibold transition-colors ${billingCycle === 'monthly' ? 'text-main' : 'text-text-secondary'}`}>
+                        Monthly
+                    </span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" checked={billingCycle === 'yearly'} onChange={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')} />
+                        <div className="w-11 h-6 bg-gray-600/50 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
+                    </label>
+                     <span className={`font-semibold transition-colors ${billingCycle === 'yearly' ? 'text-main' : 'text-text-secondary'}`}>
+                        Yearly
+                    </span>
+                    <span className={`ml-2 bg-brand-primary/20 text-brand-primary text-xs font-bold px-2 py-1 rounded-full transition-opacity duration-300 ${billingCycle === 'yearly' ? 'opacity-100' : 'opacity-0'}`}>
+                        SAVE 16%
+                    </span>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 items-start">
                 {plans.map((plan) => {
                     const isFree = plan.name === 'free';
-                    const priceObj = pricingData[plan.name][currency];
-                    const price = billingCycle === 'monthly' ? priceObj.monthly : priceObj.yearly;
+                    const price = isFree ? '$0' : (billingCycle === 'monthly' ? plan.priceMonthly : plan.priceYearly);
                     const pricePeriod = isFree ? ' Forever' : (billingCycle === 'monthly' ? ' / mo' : ' / year');
                     
                     const ctaText = getCtaText(plan);
+                    // On trial, no plan is "current" for subscription purposes. All are actionable.
                     const isCurrent = !isOnTrial && (plan.name === currentPlan && (isFree || billingCycle === (currentUser.subscriptionCycle || 'monthly')));
                     const isActionable = !isCurrent && ctaText !== 'Downgrade Unavailable';
                     const isDisabled = isCurrent || isLoading === plan.name || !isActionable || isRedirecting;
@@ -429,7 +406,7 @@ const PlanSelectionView: React.FC<{
                     } else if (!isActionable) {
                          buttonClasses += ' bg-gray-800/60 text-text-secondary cursor-not-allowed';
                     } else if (plan.isFeatured) {
-                        buttonClasses += ' btn-primary';
+                        buttonClasses += ' btn-primary'; // Featured gets brand primary
                     } else if (isOnTrial && plan.name !== 'free') {
                         buttonClasses += ' btn-primary';
                     } else {
@@ -558,61 +535,24 @@ const ManagementDashboardView: React.FC<{
 export const SubscriptionPage: React.FC<SubscriptionPageProps> = (props) => {
     const isSubscribed = props.currentUser.subscriptionPlan && props.currentUser.subscriptionPlan !== 'free';
     const [paymentSuccessMessage, setPaymentSuccessMessage] = useState<string | null>(null);
-    const [globalSettings, setGlobalSettings] = useState<GlobalSettings | null>(null);
     const isOnTrial = !!props.currentUser.trialEndsAt && props.currentUser.subscriptionPlan === 'agency';
 
-    // Load global settings to verify payment gateway config
+
     useEffect(() => {
-        const storedSettings = localStorage.getItem('zenith-engine-ai-global-settings');
-        if (storedSettings) {
-            setGlobalSettings(JSON.parse(storedSettings));
+        const params = new URLSearchParams(window.location.search);
+        const status = params.get('payment_status');
+        const plan = params.get('plan') as SubscriptionPlan | null;
+        const cycle = params.get('cycle') as 'monthly' | 'yearly' | null;
+
+        if (status === 'success' && plan && cycle) {
+            props.onUpdatePlan(plan, cycle).then(() => {
+                setPaymentSuccessMessage(`Your subscription has been successfully upgraded to the ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan!`);
+            });
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } else if (status === 'cancelled') {
+            window.history.replaceState({}, document.title, window.location.pathname);
         }
-    }, []);
-
-    useEffect(() => {
-        const verify = async () => {
-            const params = new URLSearchParams(window.location.search);
-            const status = params.get('payment_status');
-            const plan = params.get('plan') as SubscriptionPlan | null;
-            const cycle = params.get('cycle') as 'monthly' | 'yearly' | null;
-            
-            // If the user lands here with a success status or token, we must verify against the backend simulator
-            if ((status === 'success' || params.has('token') || params.has('reference')) && plan && cycle && globalSettings) {
-                
-                // Determine which gateway was likely used based on params or settings fallback
-                let gateway = globalSettings.localPaymentGateway || globalSettings.internationalPaymentGateway;
-                if (params.has('token')) gateway = 'paypal'; // Strong signal for PayPal
-                if (params.has('reference') || params.has('trxref')) gateway = 'paystack'; // Strong signal for Paystack
-                if (params.has('session_id')) gateway = 'stripe'; // Strong signal for Stripe
-
-                if (!gateway) return;
-
-                // Show verification feedback
-                setPaymentSuccessMessage("Verifying payment transaction...");
-                
-                try {
-                    const verification = await verifyPaymentTransaction(gateway, params, globalSettings);
-                    if (verification.success) {
-                        await props.onUpdatePlan(plan, cycle);
-                        setPaymentSuccessMessage(`Payment Verified! Subscription upgraded to ${plan.charAt(0).toUpperCase() + plan.slice(1)}.`);
-                        // Clean URL to prevent re-verification on refresh
-                        window.history.replaceState({}, document.title, window.location.pathname);
-                    } else {
-                        setPaymentSuccessMessage(null); // Clear optimistic message
-                        alert(`Payment verification failed: ${verification.message}`);
-                    }
-                } catch (e: any) {
-                    console.error("Verification error", e);
-                    setPaymentSuccessMessage(null);
-                    alert(`An error occurred while verifying payment: ${e.message}`);
-                }
-            } else if (status === 'cancelled') {
-                 window.history.replaceState({}, document.title, window.location.pathname);
-            }
-        };
-        
-        if (globalSettings) verify();
-    }, [props.onUpdatePlan, globalSettings]);
+    }, [props.onUpdatePlan]);
 
     return (
         <div className="max-w-6xl mx-auto">
@@ -620,7 +560,7 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = (props) => {
                 <p>Upgrade, downgrade, or view the features of your current plan. Choose the plan that best fits your content creation needs.</p>
             </TabGuide>
             {paymentSuccessMessage && (
-                <div className="bg-green-900/50 border border-green-500/50 text-green-200 px-4 py-3 rounded-lg text-sm mb-6 flex items-center gap-3 animate-pulse">
+                <div className="bg-green-900/50 border border-green-500/50 text-green-200 px-4 py-3 rounded-lg text-sm mb-6 flex items-center gap-3">
                     <CheckCircleIcon className="h-5 w-5" />
                     {paymentSuccessMessage}
                 </div>

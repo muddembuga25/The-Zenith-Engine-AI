@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ArrowRightIcon } from './Icons';
 
@@ -9,7 +8,7 @@ interface NextStepGuideProps {
 }
 
 export const NextStepGuide: React.FC<NextStepGuideProps> = ({ label, description, onClick }) => (
-  <div className="mt-12 p-6 bg-panel/50 rounded-2xl border border-dashed border-brand-primary/50">
+  <div className="mt-12 p-6 bg-panel/50 rounded-2xl border border-dashed border-blue-500/50">
     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
       <div className="text-center sm:text-left flex-1">
         <h4 className="text-lg font-bold text-white">Next Step: {label}</h4>

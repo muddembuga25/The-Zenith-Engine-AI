@@ -9,7 +9,6 @@ import { DraftsTab } from './DraftsTab';
 import { HistoryTab } from './HistoryTab';
 import { DocumentTextIcon, PhotoIcon, VideoCameraIcon, MailIcon, PenIcon, ArchiveBoxIcon, LightbulbIcon, XIcon } from './Icons';
 import { NextStepGuide } from './NextStepGuide';
-import { UpgradePlan } from './UpgradePlan';
 
 interface ContentHubTabProps {
     site: Site;
@@ -27,20 +26,19 @@ interface ContentHubTabProps {
     onRefreshClarityData: () => Promise<void>;
     onRefreshArticle: (url: string, site: Site) => Promise<void>;
     isAgencyContext?: boolean;
-    planAccess: any;
 }
 
 const planPillClasses: Record<string, string> = {
-    creator: 'bg-brand-primary/10 text-brand-primary border border-brand-primary/20 shadow-sm',
+    creator: 'bg-cyan-500/10 text-cyan-500 border border-cyan-500/20 shadow-sm',
     pro: 'bg-brand-primary/10 text-brand-primary border border-brand-primary/20 shadow-sm',
-    agency: 'bg-brand-primary/10 text-brand-primary border border-brand-primary/20 shadow-sm',
+    agency: 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 shadow-sm',
 };
 
 const TabGuide: React.FC<{ title: string; children: React.ReactNode; }> = ({ title, children }) => {
     const [isVisible, setIsVisible] = useState(true);
     if (!isVisible) return null;
     return (
-        <div className="bg-brand-primary/10 p-5 rounded-xl border border-brand-primary/30 shadow-sm mb-8 flex items-start gap-4 animate-fade-in relative overflow-hidden border-y border-r border-border-subtle">
+        <div className="bg-panel p-5 rounded-xl border-l-4 border-brand-primary shadow-sm mb-8 flex items-start gap-4 animate-fade-in relative overflow-hidden border-y border-r border-border-subtle">
             <div className="absolute -right-6 -top-6 opacity-[0.03] pointer-events-none">
                 <LightbulbIcon className="h-32 w-32 text-brand-primary" />
             </div>
@@ -92,7 +90,7 @@ const guideContent: Record<string, { title: string, description: React.ReactNode
 
 export const ContentHubTab: React.FC<ContentHubTabProps> = (props) => {
     const [activeSubTab, setActiveSubTab] = useState(props.initialSubTab || 'blog');
-    const { isAgencyContext, planAccess } = props;
+    const { isAgencyContext } = props;
 
     useEffect(() => {
         if (props.initialSubTab) {
@@ -117,14 +115,9 @@ export const ContentHubTab: React.FC<ContentHubTabProps> = (props) => {
     const hasKeywords = useMemo(() => props.site.keywordList.split('\n').some(k => k.trim() && !k.trim().startsWith('[DONE]')), [props.site.keywordList]);
     const currentGuide = guideContent[activeSubTab];
     
-    const isLocked = 
-        (activeSubTab === 'graphics' && !planAccess.canUseSocialGraphicsAutomation) ||
-        (activeSubTab === 'video' && !planAccess.canUseSocialVideoAutomation) ||
-        (activeSubTab === 'email' && !planAccess.canUseEmailMarketing);
-
     return (
         <div className="w-full max-w-7xl mx-auto space-y-8">
-            <div className="border-b border-border">
+            <div className="border-b border-base">
                 <nav className="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
                     {subTabs.map(tab => (
                         <button
@@ -149,35 +142,19 @@ export const ContentHubTab: React.FC<ContentHubTabProps> = (props) => {
                 </nav>
             </div>
             
-            {currentGuide && !isLocked && (
+            {currentGuide && (
                 <TabGuide title={currentGuide.title}>
                     {currentGuide.description}
                 </TabGuide>
             )}
 
             <div key={activeSubTab} className="animate-fade-in">
-                {isLocked ? (
-                    <UpgradePlan 
-                        featureName={
-                            activeSubTab === 'graphics' ? 'Social Graphics' : 
-                            activeSubTab === 'video' ? 'Social Video' : 
-                            activeSubTab === 'email' ? 'Email Marketing' : 'Premium Feature'
-                        } 
-                        requiredPlan={
-                            activeSubTab === 'graphics' ? 'Creator' : 'Pro'
-                        } 
-                        setActiveTab={props.setActiveTab} 
-                    />
-                ) : (
-                    <>
-                        {activeSubTab === 'blog' && <GenerateTab site={props.site} onSiteUpdate={props.onSiteUpdate} onGenerateAndScore={props.onGenerateAndScore} setActiveTab={props.setActiveTab} setError={props.setError} logApiUsage={props.logApiUsage} onRefreshArticle={props.onRefreshArticle} />}
-                        {activeSubTab === 'graphics' && <SocialGraphicsTab site={props.site} onSiteUpdate={props.onSiteUpdate} logApiUsage={props.logApiUsage} setError={props.setError} />}
-                        {activeSubTab === 'video' && <SocialVideoTab site={props.site} onSiteUpdate={props.onSiteUpdate} logApiUsage={props.logApiUsage} setError={props.setError} />}
-                        {activeSubTab === 'email' && <EmailMarketingTab site={props.site} onSiteUpdate={props.onSiteUpdate} logApiUsage={props.logApiUsage} setError={props.setError} />}
-                        {activeSubTab === 'drafts' && <DraftsTab drafts={props.site.drafts || []} onReview={props.onReviewDraft} onDiscard={props.onDiscardDraft} />}
-                        {activeSubTab === 'history' && <HistoryTab site={props.site} history={props.site.history || []} onViewDetails={props.onViewHistory} onRefreshAnalytics={props.onRefreshAnalytics} onRefreshClarityData={props.onRefreshClarityData} />}
-                    </>
-                )}
+                {activeSubTab === 'blog' && <GenerateTab site={props.site} onSiteUpdate={props.onSiteUpdate} onGenerateAndScore={props.onGenerateAndScore} setActiveTab={props.setActiveTab} setError={props.setError} logApiUsage={props.logApiUsage} onRefreshArticle={props.onRefreshArticle} />}
+                {activeSubTab === 'graphics' && <SocialGraphicsTab site={props.site} onSiteUpdate={props.onSiteUpdate} logApiUsage={props.logApiUsage} setError={props.setError} />}
+                {activeSubTab === 'video' && <SocialVideoTab site={props.site} onSiteUpdate={props.onSiteUpdate} logApiUsage={props.logApiUsage} setError={props.setError} />}
+                {activeSubTab === 'email' && <EmailMarketingTab site={props.site} onSiteUpdate={props.onSiteUpdate} logApiUsage={props.logApiUsage} setError={props.setError} />}
+                {activeSubTab === 'drafts' && <DraftsTab drafts={props.site.drafts || []} onReview={props.onReviewDraft} onDiscard={props.onDiscardDraft} />}
+                {activeSubTab === 'history' && <HistoryTab site={props.site} history={props.site.history || []} onViewDetails={props.onViewHistory} onRefreshAnalytics={props.onRefreshAnalytics} onRefreshClarityData={props.onRefreshClarityData} />}
             </div>
 
             {hasKeywords && !props.site.isAutomationEnabled && activeSubTab === 'blog' && (

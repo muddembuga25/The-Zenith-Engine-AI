@@ -1,7 +1,7 @@
 
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import type { Site, SocialMediaSettings, SupabaseConnection, PaystackConnection, PayfastConnection, WiseConnection, GlobalSettings, PayoneerConnection, StripeConnection, PayPalConnection } from '../types';
-import { LightbulbIcon, XIcon, CreditCardIcon, SparklesIcon, GoogleIcon, EyeIcon, EyeSlashIcon, UserIcon, KeyIcon, CheckCircleIcon, BuildingOffice2Icon } from './Icons';
+import { LightbulbIcon, XIcon, CreditCardIcon, SparklesIcon, GoogleIcon, EyeIcon, EyeSlashIcon, UserIcon, KeyIcon, CheckCircleIcon } from './Icons';
 import * as aiService from '../services/aiService';
 
 interface GlobalConnectionsTabProps {
@@ -18,58 +18,39 @@ interface GlobalConnectionsTabProps {
     setError: (error: string | null) => void;
 }
 
-// Brand Color Mapping - Official Brand Colors
-const brandStyles: Record<string, { text: string, bg: string, border: string, solid: string, hoverBorder: string }> = {
-    google_auth: { text: 'text-[#4285F4]', bg: 'bg-[#4285F4]/10', border: 'border-[#4285F4]/20', solid: 'bg-[#4285F4]', hoverBorder: 'hover:border-[#4285F4]/50' },
-    gemini: { text: 'text-[#8E75B2]', bg: 'bg-[#8E75B2]/10', border: 'border-[#8E75B2]/20', solid: 'bg-[#8E75B2]', hoverBorder: 'hover:border-[#8E75B2]/50' },
-    supabase: { text: 'text-[#3ECF8E]', bg: 'bg-[#3ECF8E]/10', border: 'border-[#3ECF8E]/20', solid: 'bg-[#3ECF8E]', hoverBorder: 'hover:border-[#3ECF8E]/50' },
-    paystack: { text: 'text-[#00C3F7]', bg: 'bg-[#00C3F7]/10', border: 'border-[#00C3F7]/20', solid: 'bg-[#00C3F7]', hoverBorder: 'hover:border-[#00C3F7]/50' },
-    payfast: { text: 'text-[#BF0711]', bg: 'bg-[#BF0711]/10', border: 'border-[#BF0711]/20', solid: 'bg-[#BF0711]', hoverBorder: 'hover:border-[#BF0711]/50' },
-    wise: { text: 'text-[#9FE870]', bg: 'bg-[#9FE870]/10', border: 'border-[#9FE870]/20', solid: 'bg-[#9FE870]', hoverBorder: 'hover:border-[#9FE870]/50' },
-    payoneer: { text: 'text-[#FF4800]', bg: 'bg-[#FF4800]/10', border: 'border-[#FF4800]/20', solid: 'bg-[#FF4800]', hoverBorder: 'hover:border-[#FF4800]/50' },
-    stripe: { text: 'text-[#635BFF]', bg: 'bg-[#635BFF]/10', border: 'border-[#635BFF]/20', solid: 'bg-[#635BFF]', hoverBorder: 'hover:border-[#635BFF]/50' },
-    paypal: { text: 'text-[#003087]', bg: 'bg-[#003087]/10', border: 'border-[#003087]/20', solid: 'bg-[#003087]', hoverBorder: 'hover:border-[#003087]/50' },
-    default: { text: 'text-brand-primary', bg: 'bg-brand-primary/10', border: 'border-brand-primary/20', solid: 'bg-brand-primary', hoverBorder: 'hover:border-brand-primary/50' }
-};
-
-const getStyle = (key: string) => brandStyles[key] || brandStyles.default;
-
 const TabGuide: React.FC<{ title: string; children: React.ReactNode; }> = ({ title, children }) => {
     const [isVisible, setIsVisible] = useState(true);
     if (!isVisible) return null;
     return (
-        <div className="bg-brand-primary/10 p-4 rounded-lg border border-brand-primary/30 mb-8 flex items-start gap-4 animate-fade-in">
-            <LightbulbIcon className="h-6 w-6 text-brand-primary flex-shrink-0 mt-1" />
+        <div className="bg-blue-900/20 p-4 rounded-lg border border-blue-500/30 mb-8 flex items-start gap-4 animate-fade-in">
+            <LightbulbIcon className="h-6 w-6 text-blue-300 flex-shrink-0 mt-1" />
             <div className="flex-1">
                 <h3 className="font-bold text-main">{title}</h3>
-                <div className="text-sm text-brand-primary mt-1">
+                <div className="text-sm text-blue-200/80 mt-1">
                     {children}
                 </div>
             </div>
-            <button onClick={() => setIsVisible(false)} className="p-1.5 text-brand-primary hover:text-main rounded-full">
+            <button onClick={() => setIsVisible(false)} className="p-1.5 text-blue-200/60 hover:text-main rounded-full">
                 <XIcon className="h-5 w-5" />
             </button>
         </div>
     );
 };
 
-const Panel: React.FC<{ title: string; description: string; icon: React.FC<any>; brandKey?: string; children: React.ReactNode; }> = ({ title, description, icon: Icon, brandKey = 'default', children }) => {
-    const style = getStyle(brandKey);
-    return (
-        <div className={`bg-panel/50 p-6 rounded-2xl border ${style.border}`}>
-            <div className="flex items-start gap-4 mb-6">
-                <div className={`p-3 rounded-lg ${style.bg} border ${style.border} flex-shrink-0`}>
-                    <Icon className={`h-6 w-6 ${style.text}`} />
-                </div>
-                <div>
-                    <h3 className="text-xl font-bold text-main">{title}</h3>
-                    <p className="text-sm text-text-secondary mt-1">{description}</p>
-                </div>
+const Panel: React.FC<{ title: string; description: string; icon: React.FC<any>; iconColorClass?: string; children: React.ReactNode; }> = ({ title, description, icon: Icon, iconColorClass = 'text-blue-300', children }) => (
+    <div className="bg-panel/50 p-6 rounded-2xl border border-border">
+        <div className="flex items-start gap-4 mb-6">
+            <div className="p-3 rounded-lg bg-blue-600/20 border border-blue-500/30 flex-shrink-0">
+                <Icon className={`h-6 w-6 ${iconColorClass}`} />
             </div>
-            {children}
+            <div>
+                <h3 className="text-xl font-bold text-main">{title}</h3>
+                <p className="text-sm text-text-secondary mt-1">{description}</p>
+            </div>
         </div>
-    );
-};
+        {children}
+    </div>
+);
 
 const SecretInput: React.FC<{ value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; placeholder: string; }> = ({ value, onChange, placeholder }) => {
     const [isVisible, setIsVisible] = useState(false);
@@ -92,11 +73,11 @@ const GoogleAuthPanel: React.FC<{
             title="Google Sign-In Credentials"
             description="Configure the OAuth credentials used for the main 'Sign in with Google' button on the login page."
             icon={GoogleIcon}
-            brandKey="google_auth"
+            iconColorClass="text-blue-500"
         >
             <div className="space-y-4">
                 <p className="text-xs text-text-secondary">
-                    Create OAuth 2.0 credentials in your Google Cloud Console. <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-brand-primary hover:underline">Get Credentials</a>
+                    Create OAuth 2.0 credentials in your Google Cloud Console. <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Get Credentials</a>
                 </p>
                 <div>
                     <label className="block text-sm font-medium text-text-primary mb-1">Client ID</label>
@@ -133,12 +114,12 @@ const GoogleGeminiPanel: React.FC<{
             title="Google Gemini API"
             description="Set a global default Google API key. This will be used for all sites that don't have a site-specific key configured."
             icon={SparklesIcon}
-            brandKey="gemini"
+            iconColorClass="text-purple-400"
         >
             <div className="space-y-4">
                  <p className="text-xs text-text-secondary">
                     Get your API key from Google AI Studio. This key will act as a fallback if no site-specific key is provided.
-                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-brand-primary hover:underline ml-1">Get API Key</a>
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline ml-1">Get API Key</a>
                 </p>
                 <div>
                     <label className="block text-sm font-medium text-text-primary mb-1">Global Gemini API Key</label>
@@ -160,7 +141,7 @@ const GoogleGeminiPanel: React.FC<{
                 <h4 className="text-sm font-medium text-text-primary mb-2">Live API Spend (Global Key)</h4>
                 <div className="bg-panel-light p-4 rounded-lg flex items-center justify-between">
                     <p className="text-text-secondary text-sm">Estimated spend for all sites using this key:</p>
-                    <p className="text-2xl font-bold text-brand-primary">${apiSpend.toFixed(5)}</p>
+                    <p className="text-2xl font-bold text-blue-300">${apiSpend.toFixed(5)}</p>
                 </div>
             </div>
         </Panel>
@@ -177,7 +158,7 @@ const PaystackPanel: React.FC<{
 
     return (
         <div className="space-y-4">
-            <p className="text-xs text-text-secondary">Find your keys in your Paystack Dashboard under Settings &gt; API Keys & Webhooks. <a href="https://dashboard.paystack.com/#/settings/developer" target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-primary hover:underline">Get Credentials</a></p>
+            <p className="text-xs text-text-secondary">Find your keys in your Paystack Dashboard under Settings &gt; API Keys & Webhooks. <a href="https://dashboard.paystack.com/#/settings/developer" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-400 hover:underline">Get Credentials</a></p>
             <div>
                 <label className="block text-sm font-medium text-text-primary mb-1">Public Key</label>
                 <input type="text" value={connection.publicKey} onChange={e => onConnectionChange({ publicKey: e.target.value })} placeholder="pk_live_..." className="input-base w-full" />
@@ -206,7 +187,7 @@ const PayfastPanel: React.FC<{
 
     return (
         <div className="space-y-4">
-            <p className="text-xs text-text-secondary">Find your keys on your Payfast Dashboard under Settings &gt; Integration. <a href="https://www.payfast.co.za/user/settings/integration" target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-primary hover:underline">Get Credentials</a></p>
+            <p className="text-xs text-text-secondary">Find your keys on your Payfast Dashboard under Settings &gt; Integration. <a href="https://www.payfast.co.za/user/settings/integration" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-400 hover:underline">Get Credentials</a></p>
             <div>
                 <label className="block text-sm font-medium text-text-primary mb-1">Merchant ID</label>
                 <input type="text" value={connection.merchantId} onChange={e => onConnectionChange({ merchantId: e.target.value })} placeholder="Your Merchant ID" className="input-base w-full" />
@@ -239,7 +220,7 @@ const WisePanel: React.FC<{
 
     return (
         <div className="space-y-4">
-            <p className="text-xs text-text-secondary">Generate an API token in your Wise account settings. <a href="https://wise.com/ph/business/api" target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-primary hover:underline">Get API Token</a></p>
+            <p className="text-xs text-text-secondary">Generate an API token in your Wise account settings. <a href="https://wise.com/ph/business/api" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-400 hover:underline">Get API Token</a></p>
             <div>
                 <label className="block text-sm font-medium text-text-primary mb-1">API Token</label>
                 <SecretInput value={connection.apiKey} onChange={e => onConnectionChange({ apiKey: e.target.value })} placeholder="Your Wise API Token" />
@@ -264,7 +245,7 @@ const PayoneerPanel: React.FC<{
 
     return (
         <div className="space-y-4">
-            <p className="text-xs text-text-secondary">Get your API credentials from the Payoneer Partner Portal. <a href="https://partner.payoneer.com/" target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-primary hover:underline">Get Credentials</a></p>
+            <p className="text-xs text-text-secondary">Get your API credentials from the Payoneer Partner Portal. <a href="https://partner.payoneer.com/" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-400 hover:underline">Get Credentials</a></p>
             <div>
                 <label className="block text-sm font-medium text-text-primary mb-1">Partner ID</label>
                 <input type="text" value={connection.partnerId} onChange={e => onConnectionChange({ partnerId: e.target.value })} placeholder="Your Partner ID" className="input-base w-full" />
@@ -297,7 +278,7 @@ const StripePanel: React.FC<{
 
     return (
         <div className="space-y-4">
-            <p className="text-xs text-text-secondary">Find your keys in your Stripe Dashboard under Developers &gt; API keys. <a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-primary hover:underline">Get Credentials</a></p>
+            <p className="text-xs text-text-secondary">Find your keys in your Stripe Dashboard under Developers &gt; API keys. <a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-400 hover:underline">Get Credentials</a></p>
             <div>
                 <label className="block text-sm font-medium text-text-primary mb-1">Public Key</label>
                 <input type="text" value={connection.publicKey} onChange={e => onConnectionChange({ publicKey: e.target.value })} placeholder="pk_live_..." className="input-base w-full" />
@@ -326,7 +307,7 @@ const PayPalPanel: React.FC<{
 
     return (
         <div className="space-y-4">
-            <p className="text-xs text-text-secondary">Create a REST API app in the PayPal Developer Dashboard. <a href="https://developer.paypal.com/dashboard/applications" target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-primary hover:underline">Get Credentials</a></p>
+            <p className="text-xs text-text-secondary">Create a REST API app in the PayPal Developer Dashboard. <a href="https://developer.paypal.com/dashboard/applications" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-400 hover:underline">Get Credentials</a></p>
             <div>
                 <label className="block text-sm font-medium text-text-primary mb-1">Client ID</label>
                 <input type="text" value={connection.clientId} onChange={e => onConnectionChange({ clientId: e.target.value })} placeholder="Your PayPal Client ID" className="input-base w-full" />
@@ -357,11 +338,11 @@ const SupabasePanel: React.FC<{
         <Panel
             title="Supabase Integration"
             description="Connect to your Supabase project to enable features like custom user databases and content storage."
-            icon={SparklesIcon} 
-            brandKey="supabase"
+            icon={SparklesIcon} // Placeholder icon
+            iconColorClass="text-green-400"
         >
             <div className="space-y-4">
-                <p className="text-xs text-text-secondary">Find your keys in your Supabase project settings under API. <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-primary hover:underline">Go to Dashboard</a></p>
+                <p className="text-xs text-text-secondary">Find your keys in your Supabase project settings under API. <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-400 hover:underline">Go to Dashboard</a></p>
                 <div>
                     <label className="block text-sm font-medium text-text-primary mb-1">Project URL</label>
                     <input type="url" value={connection.url} onChange={e => onConnectionChange({ url: e.target.value })} placeholder="https://....supabase.co" className="input-base w-full" />
@@ -417,14 +398,11 @@ export const GlobalConnectionsTab: React.FC<GlobalConnectionsTabProps> = (props)
         }, 0);
     }, [sites]);
 
-    const localGateways = [
-        { id: 'payfast', name: 'PayFast', component: <PayfastPanel connection={settings.payfastConnection || { merchantId: '', merchantKey: '', passphrase: '', status: 'disconnected' }} onConnectionChange={(u) => onUpdateSettings({ payfastConnection: {...(settings.payfastConnection || { merchantId: '', merchantKey: '', passphrase: '', status: 'disconnected' }), ...u} })} onVerifyPayfast={onVerifyPayfast} /> },
+    const paymentGateways = [
         { id: 'paystack', name: 'Paystack', component: <PaystackPanel connection={settings.paystackConnection || { publicKey: '', secretKey: '', status: 'disconnected' }} onConnectionChange={(u) => onUpdateSettings({ paystackConnection: {...(settings.paystackConnection || { publicKey: '', secretKey: '', status: 'disconnected' }), ...u} })} onVerifyPaystack={onVerifyPaystack} /> },
-    ];
-
-    const internationalGateways = [
-        { id: 'paypal', name: 'PayPal', component: <PayPalPanel connection={settings.payPalConnection || { clientId: '', clientSecret: '', status: 'disconnected' }} onConnectionChange={(u) => onUpdateSettings({ payPalConnection: {...(settings.payPalConnection || { clientId: '', clientSecret: '', status: 'disconnected' }), ...u} })} onVerifyPayPal={onVerifyPayPal} /> },
+        { id: 'payfast', name: 'Payfast', component: <PayfastPanel connection={settings.payfastConnection || { merchantId: '', merchantKey: '', passphrase: '', status: 'disconnected' }} onConnectionChange={(u) => onUpdateSettings({ payfastConnection: {...(settings.payfastConnection || { merchantId: '', merchantKey: '', passphrase: '', status: 'disconnected' }), ...u} })} onVerifyPayfast={onVerifyPayfast} /> },
         { id: 'stripe', name: 'Stripe', component: <StripePanel connection={settings.stripeConnection || { publicKey: '', secretKey: '', status: 'disconnected' }} onConnectionChange={(u) => onUpdateSettings({ stripeConnection: {...(settings.stripeConnection || { publicKey: '', secretKey: '', status: 'disconnected' }), ...u} })} onVerifyStripe={onVerifyStripe} /> },
+        { id: 'paypal', name: 'PayPal', component: <PayPalPanel connection={settings.payPalConnection || { clientId: '', clientSecret: '', status: 'disconnected' }} onConnectionChange={(u) => onUpdateSettings({ payPalConnection: {...(settings.payPalConnection || { clientId: '', clientSecret: '', status: 'disconnected' }), ...u} })} onVerifyPayPal={onVerifyPayPal} /> },
         { id: 'wise', name: 'Wise', component: <WisePanel connection={settings.wiseConnection || { apiKey: '', status: 'disconnected' }} onConnectionChange={(u) => onUpdateSettings({ wiseConnection: {...(settings.wiseConnection || { apiKey: '', status: 'disconnected' }), ...u} })} onVerifyWise={onVerifyWise} /> },
         { id: 'payoneer', name: 'Payoneer', component: <PayoneerPanel connection={settings.payoneerConnection || { partnerId: '', programId: '', apiKey: '', status: 'disconnected' }} onConnectionChange={(u) => onUpdateSettings({ payoneerConnection: {...(settings.payoneerConnection || { partnerId: '', programId: '', apiKey: '', status: 'disconnected' }), ...u} })} onVerifyPayoneer={onVerifyPayoneer} /> },
     ];
@@ -442,83 +420,26 @@ export const GlobalConnectionsTab: React.FC<GlobalConnectionsTabProps> = (props)
                 
                 <Panel
                     title="Payment Gateways"
-                    description="Configure payment gateways for user subscriptions. We have separated Local (South Africa) and International configurations."
+                    description="Configure payment gateways for user subscriptions. Select one active gateway at a time."
                     icon={CreditCardIcon}
-                    brandKey="stripe"
+                    iconColorClass="text-green-400"
                 >
-                    <div className="space-y-8">
-                        {/* Domestic / Local Gateway */}
+                    <div className="space-y-6">
                         <div>
-                            <div className="flex items-center justify-between mb-4">
-                                <div>
-                                    <h4 className="text-sm font-bold text-main">Domestic Gateway (South Africa - ZAR)</h4>
-                                    <p className="text-xs text-text-secondary mt-1">Primary gateway for local payments (EFT, Local Cards).</p>
-                                </div>
-                                <div className="flex gap-2">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider bg-green-900/30 text-green-400 px-2 py-1 rounded">Recommended: PayFast</span>
-                                </div>
-                            </div>
-                            
-                            <select 
-                                value={settings.localPaymentGateway || 'payfast'} 
-                                onChange={e => onUpdateSettings({ localPaymentGateway: e.target.value as any })} 
-                                className="input-base w-full mb-4"
-                            >
-                                <option value="">Select Local Gateway</option>
-                                {localGateways.map(gw => (
+                            <label className="block text-sm font-medium text-text-primary mb-1">Active Gateway</label>
+                            <select value={settings.activePaymentGateway || ''} onChange={e => onUpdateSettings({ activePaymentGateway: e.target.value as any })} className="input-base w-full">
+                                <option value="">None</option>
+                                {paymentGateways.map(gw => (
                                     <option key={gw.id} value={gw.id}>{gw.name}</option>
                                 ))}
                             </select>
-
-                            {localGateways.map(gw => {
-                                const style = getStyle(gw.id);
-                                return (settings.localPaymentGateway || 'payfast') === gw.id && (
-                                <div key={gw.id} className={`p-4 bg-panel-light border ${style.border} rounded-lg animate-fade-in`}>
-                                    <h4 className={`font-semibold mb-3 ${style.text}`}>{gw.name} Configuration</h4>
-                                    {gw.component}
-                                </div>
-                            )})}
                         </div>
-
-                        {/* Divider */}
-                        <div className="border-t border-border-subtle"></div>
-
-                        {/* International Gateway */}
-                        <div>
-                            <div className="flex items-center justify-between mb-4">
-                                <div>
-                                    <h4 className="text-sm font-bold text-main">International Gateway (Global - USD)</h4>
-                                    <p className="text-xs text-text-secondary mt-1">Primary gateway for international card payments.</p>
-                                </div>
-                                <div className="flex gap-2">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-900/30 text-blue-400 px-2 py-1 rounded">Recommended: PayPal</span>
-                                </div>
-                            </div>
-                            
-                            <div className="mb-4 text-xs text-text-tertiary bg-panel p-2 rounded border border-border-subtle">
-                                Note: For South African registered companies, PayPal is often the best default for accepting USD with zero upfront cost.
-                            </div>
-
-                            <select 
-                                value={settings.internationalPaymentGateway || 'paypal'} 
-                                onChange={e => onUpdateSettings({ internationalPaymentGateway: e.target.value as any })} 
-                                className="input-base w-full mb-4"
-                            >
-                                <option value="">Select International Gateway</option>
-                                {internationalGateways.map(gw => (
-                                    <option key={gw.id} value={gw.id}>{gw.name}</option>
-                                ))}
-                            </select>
-
-                            {internationalGateways.map(gw => {
-                                const style = getStyle(gw.id);
-                                return (settings.internationalPaymentGateway || 'paypal') === gw.id && (
-                                <div key={gw.id} className={`p-4 bg-panel-light border ${style.border} rounded-lg animate-fade-in`}>
-                                    <h4 className={`font-semibold mb-3 ${style.text}`}>{gw.name} Configuration</h4>
-                                    {gw.component}
-                                </div>
-                            )})}
-                        </div>
+                        {paymentGateways.map(gw => settings.activePaymentGateway === gw.id && (
+                             <div key={gw.id} className="p-4 bg-panel-light border border-border-subtle rounded-lg animate-fade-in">
+                                 <h4 className="font-semibold text-main mb-3">{gw.name} Configuration</h4>
+                                 {gw.component}
+                             </div>
+                        ))}
                     </div>
                 </Panel>
             </div>

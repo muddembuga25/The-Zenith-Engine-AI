@@ -1,14 +1,11 @@
-
 import type { GoogleCalendar } from '../types';
-import { proxyFetch } from './secureBackendSimulation';
 
 const API_URL = 'https://www.googleapis.com/calendar/v3';
 
 export const fetchCalendarList = async (accessToken: string): Promise<GoogleCalendar[]> => {
     const url = `${API_URL}/users/me/calendarList`;
     try {
-        const response = await proxyFetch(url, {
-            method: 'GET',
+        const response = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
             },
@@ -47,7 +44,7 @@ export const createCalendarEvent = async (
 ): Promise<any> => {
     const url = `${API_URL}/calendars/${encodeURIComponent(calendarId)}/events`;
     try {
-        const response = await proxyFetch(url, {
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${accessToken}`,

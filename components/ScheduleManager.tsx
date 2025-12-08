@@ -59,14 +59,14 @@ export const ScheduleManager: React.FC<ScheduleManagerProps> = ({ schedules, onA
                         <div>
                             <label className="block text-sm font-medium text-text-primary">Schedule Type</label>
                             <div className="mt-2 grid grid-cols-2 gap-2 bg-panel-light rounded-lg p-1 w-full">
-                                <button onClick={() => setNewSchedule(p => ({ ...p, type: 'weekly', days: [] }))} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${newSchedule.type === 'weekly' ? 'bg-brand-primary text-white' : 'text-text-secondary hover:bg-panel'}`}>Weekly</button>
-                                <button onClick={() => setNewSchedule(p => ({ ...p, type: 'monthly', days: [] }))} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${newSchedule.type === 'monthly' ? 'bg-brand-primary text-white' : 'text-text-secondary hover:bg-panel'}`}>Monthly</button>
+                                <button onClick={() => setNewSchedule(p => ({ ...p, type: 'weekly', days: [] }))} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${newSchedule.type === 'weekly' ? 'bg-blue-600 text-white' : 'text-text-secondary hover:bg-panel'}`}>Weekly</button>
+                                <button onClick={() => setNewSchedule(p => ({ ...p, type: 'monthly', days: [] }))} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${newSchedule.type === 'monthly' ? 'bg-blue-600 text-white' : 'text-text-secondary hover:bg-panel'}`}>Monthly</button>
                             </div>
                         </div>
                         {newSchedule.type === 'weekly' ? (
                             <div>
                                 <label className="block text-sm font-medium text-text-primary">Day(s) of the Week</label>
-                                <div className="mt-2 flex flex-wrap gap-2">{weekDays.map((day, index) => (<button key={day} onClick={() => handleWeekDayToggle(index)} className={`w-10 h-10 text-sm font-semibold rounded-md transition-colors flex items-center justify-center ${newSchedule.days.includes(index) ? 'bg-brand-primary text-white' : 'bg-panel-light text-text-secondary hover:bg-panel'}`}>{day}</button>))}</div>
+                                <div className="mt-2 flex flex-wrap gap-2">{weekDays.map((day, index) => (<button key={day} onClick={() => handleWeekDayToggle(index)} className={`w-10 h-10 text-sm font-semibold rounded-md transition-colors flex items-center justify-center ${newSchedule.days.includes(index) ? 'bg-blue-600 text-white' : 'bg-panel-light text-text-secondary hover:bg-panel'}`}>{day}</button>))}</div>
                             </div>
                         ) : (
                             <div>
@@ -91,7 +91,7 @@ export const ScheduleManager: React.FC<ScheduleManagerProps> = ({ schedules, onA
                         <div key={schedule.id} className="bg-panel-light p-3 rounded-lg flex items-center justify-between gap-4 border border-border">
                             <span className="font-medium text-text-secondary text-sm">{formatSchedule(schedule)}</span>
                             <div className="flex items-center gap-4">
-                                <label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={schedule.isEnabled} onChange={(e) => onToggle(schedule.id, e.target.checked)} /><div className="w-9 h-5 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-primary"></div></label>
+                                <label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={schedule.isEnabled} onChange={(e) => onToggle(schedule.id, e.target.checked)} /><div className="w-9 h-5 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div></label>
                                 <button onClick={() => onDelete(schedule.id)} className="text-red-500 hover:text-red-400 transition-colors"><TrashIcon className="h-5 w-5" /></button>
                             </div>
                         </div>

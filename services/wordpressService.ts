@@ -1,6 +1,4 @@
-
 import type { BlogPost, Site, WordPressCredentials } from '../types';
-import { proxyFetch } from './secureBackendSimulation';
 
 export interface PublishedPost {
   title: string;
@@ -17,6 +15,8 @@ export interface WordPressCategory {
   name: string;
 }
 
+const CORS_PROXY_URL = 'https://cors-anywhere.herokuapp.com/';
+
 // Helper to convert data URL to Blob
 async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
   const res = await fetch(dataUrl);
@@ -30,13 +30,8 @@ const getExistingTermId = async (
   endpoint: 'categories' | 'tags',
   name: string
 ): Promise<number | null> => {
-  // Use direct fetch here if WP supports CORS, otherwise we might need proxyFetch. 
-  // Usually WP API requires proxy if not configured for CORS.
-  // We will try proxyFetch first.
-  const searchResponse = await proxyFetch(`${apiUrl}/wp/v2/${endpoint}?search=${encodeURIComponent(name)}`, {
-      headers: headers as any
-  });
-
+  // Search for existing term
+  const searchResponse = await fetch(`${apiUrl}/wp/v2/${endpoint}?search=${encodeURIComponent(name)}`);
   if (!searchResponse.ok) {
       console.warn(`Failed to search for ${endpoint}: ${name}`);
       return null;
@@ -58,11 +53,8 @@ const getOrCreateTerm = async (
   endpoint: 'categories' | 'tags',
   name: string
 ): Promise<number> => {
-  
-  const searchResponse = await proxyFetch(`${apiUrl}/wp/v2/${endpoint}?search=${encodeURIComponent(name)}`, {
-      headers: headers as any
-  });
-  
+  // Search for existing term
+  const searchResponse = await fetch(`${apiUrl}/wp/v2/${endpoint}?search=${encodeURIComponent(name)}`);
   if (!searchResponse.ok) throw new Error(`Failed to search for ${endpoint}: ${name}`);
   const existingTerms = await searchResponse.json();
   const exactMatch = existingTerms.find((term: { name: string }) => term.name.toLowerCase() === name.toLowerCase());
@@ -72,13 +64,11 @@ const getOrCreateTerm = async (
   }
 
   // If not found, create it
-  // Note: Creating usually requires direct POST. Proxying POST requests is supported by our new helper.
   const createHeaders = new Headers(headers);
   createHeaders.append('Content-Type', 'application/json');
-  
-  const createResponse = await proxyFetch(`${apiUrl}/wp/v2/${endpoint}`, {
+  const createResponse = await fetch(`${apiUrl}/wp/v2/${endpoint}`, {
     method: 'POST',
-    headers: createHeaders as any,
+    headers: createHeaders,
     body: JSON.stringify({ name }),
   });
 
@@ -103,9 +93,9 @@ export async function verifyWordPressConnection(credentials: WordPressCredential
   authHeaders.append('Authorization', 'Basic ' + btoa(`${username}:${password}`));
 
   try {
-    const response = await proxyFetch(apiUrl, {
+    const response = await fetch(apiUrl, {
       method: 'GET',
-      headers: authHeaders as any,
+      headers: authHeaders,
     });
     
     const responseData = await response.json().catch(() => null);
@@ -120,7 +110,7 @@ export async function verifyWordPressConnection(credentials: WordPressCredential
 
   } catch (error) {
     if (error instanceof TypeError && error.message.includes('fetch')) {
-      return { success: false, message: "A network error occurred. Please ensure your site allows requests." };
+      return { success: false, message: "A network error occurred. This is often due to a CORS policy on your WordPress site. Please ensure your site allows requests from this origin." };
     }
     if (error instanceof Error) {
         return { success: false, message: error.message };
@@ -131,7 +121,10 @@ export async function verifyWordPressConnection(credentials: WordPressCredential
 
 export const fetchPublishedPosts = async (credentials: WordPressCredentials): Promise<PublishedPost[]> => {
   const { url, username, password } = credentials;
-  if (!url.trim() || !username.trim() || !password.trim()) return [];
+  // Don't proceed if URL is missing, to avoid errors.
+  if (!url.trim() || !username.trim() || !password.trim()) {
+    return [];
+  }
   
   const cleanedUrl = url.replace(/\/+$/, '');
   const apiUrl = `${cleanedUrl}/wp/v2/posts?status=publish&per_page=100&_fields=id,title,link`;
@@ -140,17 +133,19 @@ export const fetchPublishedPosts = async (credentials: WordPressCredentials): Pr
   authHeaders.append('Authorization', 'Basic ' + btoa(`${username}:${password}`));
 
   try {
-    const response = await proxyFetch(apiUrl, {
+    const response = await fetch(apiUrl, {
       method: 'GET',
-      headers: authHeaders as any,
+      headers: authHeaders,
     });
 
     if (!response.ok) {
-      console.warn(`Could not fetch published posts. Status: ${response.status}`);
+      // Don't throw an error, just log it and return empty so the main process doesn't fail.
+      console.warn(`Could not fetch published posts from WordPress. Status: ${response.status}`);
       return [];
     }
     
     const postsData = await response.json();
+    
     if (Array.isArray(postsData)) {
         return postsData.map((post: any) => ({
             title: post.title.rendered,
@@ -158,30 +153,36 @@ export const fetchPublishedPosts = async (credentials: WordPressCredentials): Pr
         }));
     }
     return [];
+
   } catch (error) {
-    console.warn("Error fetching published posts:", error);
-    return []; 
+    console.warn("Error fetching published posts from WordPress:", error);
+    return []; // Return empty array on any failure
   }
 };
 
 export const fetchAuthors = async (credentials: WordPressCredentials): Promise<WordPressAuthor[]> => {
   const { url, username, password } = credentials;
-  if (!url.trim() || !username.trim() || !password.trim()) return [];
+  if (!url.trim() || !username.trim() || !password.trim()) {
+    return [];
+  }
 
   const cleanedUrl = url.replace(/\/+$/, '');
+  // Fetch users with roles that can typically publish content
   const apiUrl = `${cleanedUrl}/wp-json/wp/v2/users?roles=administrator,editor,author&per_page=100&_fields=id,name`;
 
   const authHeaders = new Headers();
   authHeaders.append('Authorization', 'Basic ' + btoa(`${username}:${password}`));
 
   try {
-    const response = await proxyFetch(apiUrl, {
+    const response = await fetch(apiUrl, {
       method: 'GET',
-      headers: authHeaders as any,
+      headers: authHeaders,
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Could not fetch authors.' }));
+      const errorData = await response.json().catch(() => ({ message: 'Could not fetch authors. Check permissions.' }));
+      // This could fail if the user doesn't have permission to list users, which is common.
+      // We throw an error so the UI can handle it gracefully.
       throw new Error(`Failed to fetch authors: ${errorData.message || `Status ${response.status}`}`);
     }
 
@@ -194,23 +195,26 @@ export const fetchAuthors = async (credentials: WordPressCredentials): Promise<W
     }
     return [];
   } catch (error) {
-    console.error("Error fetching authors:", error);
-    if (error instanceof Error) throw error;
+    console.error("Error fetching authors from WordPress:", error);
+    if (error instanceof Error) {
+        throw error;
+    }
     throw new Error("An unknown error occurred while fetching authors.");
   }
 };
 
 export const fetchCategories = async (credentials: WordPressCredentials): Promise<WordPressCategory[]> => {
     const { url, username, password } = credentials;
-    if (!url.trim() || !username.trim() || !password.trim()) return [];
-    
+    if (!url.trim() || !username.trim() || !password.trim()) {
+        return [];
+    }
     const cleanedUrl = url.replace(/\/+$/, '');
     const apiUrl = `${cleanedUrl}/wp/v2/categories?per_page=100&_fields=id,name&orderby=count&order=desc`;
     const authHeaders = new Headers();
     authHeaders.append('Authorization', 'Basic ' + btoa(`${username}:${password}`));
 
     try {
-        const response = await proxyFetch(apiUrl, { method: 'GET', headers: authHeaders as any });
+        const response = await fetch(apiUrl, { method: 'GET', headers: authHeaders });
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ message: 'Could not fetch categories.' }));
             throw new Error(`Failed to fetch categories: ${errorData.message || `Status ${response.status}`}`);
@@ -221,7 +225,7 @@ export const fetchCategories = async (credentials: WordPressCredentials): Promis
         }
         return [];
     } catch (error) {
-        console.error("Error fetching categories:", error);
+        console.error("Error fetching categories from WordPress:", error);
         if (error instanceof Error) throw error;
         throw new Error("An unknown error occurred while fetching categories.");
     }
@@ -229,20 +233,22 @@ export const fetchCategories = async (credentials: WordPressCredentials): Promis
 
 export const fetchBrandingFromWordPress = async (credentials: Pick<WordPressCredentials, 'url'>): Promise<{ brandColors: string | null; brandFonts: string | null; }> => {
     const { url } = credentials;
-    if (!url.trim()) return { brandColors: null, brandFonts: null };
-    
+    if (!url.trim()) {
+        return { brandColors: null, brandFonts: null };
+    }
     const cleanedUrl = url.replace(/\/+$/, '');
     try {
-        const response = await proxyFetch(cleanedUrl);
+        const response = await fetch(cleanedUrl);
         const html = await response.text();
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, "text/html");
 
+        // Simple color extraction from CSS variables
         const colors = new Set<string>();
         const colorRegex = /#([0-9a-f]{3}){1,2}/gi;
         const styleSheets = Array.from(doc.styleSheets);
         
-        try { 
+        try { // This can throw security errors on cross-origin sheets
             styleSheets.forEach(sheet => {
                 try {
                     Array.from(sheet.cssRules).forEach(rule => {
@@ -251,10 +257,11 @@ export const fetchBrandingFromWordPress = async (credentials: Pick<WordPressCred
                             if (matches) matches.forEach(color => colors.add(color));
                         }
                     });
-                } catch (e) { /* ignore */ }
+                } catch (e) { /* ignore single rule error */ }
             });
-        } catch (e) { /* ignore */ }
+        } catch (e) { /* ignore stylesheet access error */ }
         
+        // Font extraction
         const fonts = new Set<string>();
         const fontRegex = /font-family:\s*([^;\}]+)/gi;
         let match;
@@ -272,8 +279,8 @@ export const fetchBrandingFromWordPress = async (credentials: Pick<WordPressCred
         };
 
     } catch (error) {
-        console.error("Error fetching branding:", error);
-        throw new Error("Could not fetch branding from the provided URL.");
+        console.error("Error fetching branding from WordPress site:", error);
+        throw new Error("Could not fetch branding from the provided URL. It may be down or blocking requests.");
     }
 }
 
@@ -295,36 +302,18 @@ export const publishPost = async (site: Site, post: BlogPost, focusKeyword: stri
     formData.append('caption', post.imageCaption);
     formData.append('description', post.imageDescription);
 
-    // Note: formData uploads might need special handling in proxyFetch if the backend doesn't stream well.
-    // For now, we attempt to use proxyFetch with formData. 
-    // In many proxy implementations, you need to strip the Content-Type header so the browser sets the boundary.
-    // However, since proxyFetch takes options, we handle it carefully.
-    
-    // NOTE: Proxying Multipart/Form-Data is complex via simple JSON proxy. 
-    // In Mock Mode, direct fetch works. In Prod Mode, we might need a dedicated upload endpoint.
-    // We will assume Mock Mode behavior for FormData for now or attempt direct fetch if proxy fails.
-    
-    let imageData;
-    try {
-        const imageHeaders = new Headers(authHeaders);
-        // Do NOT set Content-Type for FormData, let browser handle boundary
-        
-        // We try proxyFetch. If using the Mock Proxy (cors-anywhere), it usually supports headers.
-        const imageResponse = await proxyFetch(`${apiUrl}wp/v2/media`, {
-            method: 'POST',
-            headers: imageHeaders as any,
-            body: formData,
-        });
+    const imageHeaders = new Headers(authHeaders);
+    const imageResponse = await fetch(`${apiUrl}wp/v2/media`, {
+        method: 'POST',
+        headers: imageHeaders,
+        body: formData,
+    });
 
-        if (!imageResponse.ok) {
-            const errorData = await imageResponse.json().catch(() => ({ message: "Unknown error uploading image." }));
-            throw new Error(`Image upload failed: ${errorData.message}`);
-        }
-        imageData = await imageResponse.json();
-    } catch (e) {
-        throw e;
+    if (!imageResponse.ok) {
+        const errorData = await imageResponse.json().catch(() => ({ message: "Unknown error uploading image." }));
+        throw new Error(`Image upload failed: ${errorData.message}`);
     }
-
+    const imageData = await imageResponse.json();
     const featuredMediaId = imageData.id;
     
     // 2. Get or create categories and tags
@@ -351,9 +340,9 @@ export const publishPost = async (site: Site, post: BlogPost, focusKeyword: stri
     
     const postHeaders = new Headers(authHeaders);
     postHeaders.append('Content-Type', 'application/json');
-    const postResponse = await proxyFetch(`${apiUrl}wp/v2/posts`, {
+    const postResponse = await fetch(`${apiUrl}wp/v2/posts`, {
         method: 'POST',
-        headers: postHeaders as any,
+        headers: postHeaders,
         body: JSON.stringify(postData),
     });
 

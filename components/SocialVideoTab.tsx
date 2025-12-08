@@ -30,28 +30,6 @@ export const SocialVideoTab: React.FC<SocialVideoTabProps> = ({ site, onSiteUpda
     const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
     const [isPublishing, setIsPublishing] = useState(false);
     const [selectedCharacterId, setSelectedCharacterId] = useState<string>('');
-    const [hasApiKey, setHasApiKey] = useState<boolean>(false);
-
-    useEffect(() => {
-        const checkKey = async () => {
-            if ((window as any).aistudio) {
-                const hasKey = await (window as any).aistudio.hasSelectedApiKey();
-                setHasApiKey(hasKey);
-            } else {
-                // If not in AI Studio environment, assume keys are handled via env vars or manual input
-                setHasApiKey(true);
-            }
-        };
-        checkKey();
-    }, []);
-
-    const handleSelectKey = async () => {
-        if ((window as any).aistudio) {
-            await (window as any).aistudio.openSelectKey();
-            // Race condition mitigation as per guidelines: assume successful
-            setHasApiKey(true);
-        }
-    };
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const gallerySelect = document.getElementById('gallery-video-image-select') as HTMLSelectElement;
@@ -97,11 +75,6 @@ export const SocialVideoTab: React.FC<SocialVideoTabProps> = ({ site, onSiteUpda
     };
 
     const handleGenerate = useCallback(async () => {
-        if (!hasApiKey && (window as any).aistudio) {
-            setError("Please select an API Key first.");
-            return;
-        }
-
         if (!prompt.trim()) {
             setError("Please enter a prompt for the video.");
             return;
@@ -124,19 +97,12 @@ export const SocialVideoTab: React.FC<SocialVideoTabProps> = ({ site, onSiteUpda
 
             setResult({ videoUrl, caption, mcpId });
         } catch (error: any) {
-            const errorMessage = error.message || "An unknown error occurred during video generation.";
-            if (errorMessage.includes("Requested entity was not found") && (window as any).aistudio) {
-                setHasApiKey(false);
-                setError("API Key error. Please re-select your API key.");
-                await (window as any).aistudio.openSelectKey();
-            } else {
-                setError(errorMessage);
-            }
+            setError(error.message || "An unknown error occurred during video generation.");
         } finally {
             setIsLoading(false);
             setLoadingMessage('');
         }
-    }, [prompt, site, logApiUsage, setError, selectedCharacterId, image, hasApiKey]);
+    }, [prompt, site, logApiUsage, setError, selectedCharacterId, image]);
 
     const handleSaveToHistory = useCallback(() => {
         if (!result) return;
@@ -236,25 +202,16 @@ export const SocialVideoTab: React.FC<SocialVideoTabProps> = ({ site, onSiteUpda
                         </div>
                     )}
 
-                    {!hasApiKey ? (
-                        <div className="p-4 bg-yellow-900/20 border border-yellow-500/50 rounded-lg">
-                            <p className="text-yellow-200 text-sm mb-3">You must select a paid API Key to use Veo video generation.</p>
-                            <button onClick={handleSelectKey} className="w-full btn btn-primary flex items-center justify-center gap-2">
-                                <KeyIcon className="h-5 w-5" /> Select API Key
-                            </button>
-                        </div>
-                    ) : (
-                        <button onClick={handleGenerate} disabled={isLoading || !prompt.trim()} className="w-full btn btn-primary text-lg flex items-center justify-center gap-3 disabled:opacity-50">
-                            {isLoading ? 'Generating...' : <><VideoCameraIcon className="h-6 w-6" /> Generate Video</>}
-                        </button>
-                    )}
+                    <button onClick={handleGenerate} disabled={isLoading || !prompt.trim()} className="w-full btn btn-primary text-lg flex items-center justify-center gap-3 disabled:opacity-50">
+                        {isLoading ? 'Generating...' : <><VideoCameraIcon className="h-6 w-6" /> Generate Video</>}
+                    </button>
                 </div>
                 
                 <div className="bg-panel/50 p-4 rounded-2xl border border-border min-h-[300px]">
-                    <h3 className="text-lg font-bold text-brand-primary">Result</h3>
+                    <h3 className="text-lg font-bold text-blue-300">Result</h3>
                     {isLoading ? (
                          <div className="flex flex-col items-center justify-center h-full text-center">
-                            <svg className="animate-spin h-8 w-8 text-brand-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            <svg className="animate-spin h-8 w-8 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                             <p className="text-text-primary mt-3 font-semibold">{loadingMessage || "Generating video..."}</p>
                             <p className="text-xs text-text-secondary mt-1">This can take a few minutes.</p>
                         </div>
@@ -297,7 +254,7 @@ export const SocialVideoTab: React.FC<SocialVideoTabProps> = ({ site, onSiteUpda
                             <div className="space-y-3 max-h-60 overflow-y-auto">
                                 {connectedAccounts.map(account => (
                                     <label key={`${account.platform}:${account.id}`} className="flex items-center p-3 bg-panel-light rounded-lg border border-border-subtle cursor-pointer hover:bg-gray-700/50">
-                                        <input type="checkbox" checked={selectedAccounts.includes(`${account.platform}:${account.id}`)} onChange={() => toggleAccountSelection(`${account.platform}:${account.id}`)} className="h-4 w-4 rounded bg-gray-700 border-gray-600 text-brand-primary focus:ring-brand-primary"/>
+                                        <input type="checkbox" checked={selectedAccounts.includes(`${account.platform}:${account.id}`)} onChange={() => toggleAccountSelection(`${account.platform}:${account.id}`)} className="h-4 w-4 rounded bg-gray-700 border-gray-600 text-blue-600 focus:ring-blue-500"/>
                                         <span className="ml-3 text-sm font-medium text-white">{account.name} ({account.platform})</span>
                                     </label>
                                 ))}

@@ -1,6 +1,4 @@
-
 import type { PostHistoryItem } from '../types';
-import { proxyFetch } from './secureBackendSimulation';
 
 const DATA_API_URL = 'https://analyticsdata.googleapis.com/v1beta';
 const ADMIN_API_URL = 'https://analyticsadmin.googleapis.com/v1beta';
@@ -31,7 +29,7 @@ export const fetchAnalyticsGoals = async (accessToken: string, propertyId: strin
     const url = `${ADMIN_API_URL}/${propertyId}/conversionEvents`;
     
     try {
-        const response = await proxyFetch(url, {
+        const response = await fetch(url, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
@@ -77,7 +75,7 @@ export const getCoreMetrics = async (accessToken: string, propertyId: string) =>
     };
 
     try {
-        const response = await proxyFetch(url, {
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
@@ -92,7 +90,7 @@ export const getCoreMetrics = async (accessToken: string, propertyId: string) =>
         }
 
         const data = await response.json();
-        const totals = data.totals?.[0]?.metricValues || [{value:'0'},{value:'0'},{value:'0'},{value:'0'}];
+        const totals = data.totals[0].metricValues;
 
         return {
             sessions: parseInt(totals[0].value, 10),
@@ -102,56 +100,6 @@ export const getCoreMetrics = async (accessToken: string, propertyId: string) =>
         };
     } catch (error) {
         console.error("Error fetching GA core metrics:", error);
-        throw error;
-    }
-};
-
-/**
- * Fetches daily metrics for the last 30 days for charting.
- */
-export const getAnalyticsHistory = async (accessToken: string, propertyId: string) => {
-    const url = `${DATA_API_URL}/${propertyId}:runReport`;
-
-    const requestBody = {
-        dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
-        dimensions: [{ name: 'date' }], // 'date' format YYYYMMDD
-        metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }],
-        orderBys: [{ dimension: { dimensionName: 'date' } }],
-    };
-
-    try {
-        const response = await proxyFetch(url, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(requestBody),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`Google Analytics Data API error: ${errorData.error.message}`);
-        }
-
-        const data = await response.json();
-        
-        if (!data.rows) {
-            return [];
-        }
-
-        return data.rows.map((row: any) => {
-            const dateStr = row.dimensionValues[0].value; // YYYYMMDD
-            // Format to simple Day/Month
-            const formattedDate = `${dateStr.substring(4, 6)}/${dateStr.substring(6, 8)}`;
-            return {
-                name: formattedDate,
-                pageviews: parseInt(row.metricValues[0].value, 10),
-                visitors: parseInt(row.metricValues[1].value, 10),
-            };
-        });
-    } catch (error) {
-        console.error("Error fetching GA history:", error);
         throw error;
     }
 };
@@ -174,7 +122,7 @@ export const getTopPosts = async (accessToken: string, propertyId: string) => {
     };
     
     try {
-        const response = await proxyFetch(url, {
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
@@ -217,7 +165,7 @@ export const getTrafficSources = async (accessToken: string, propertyId: string)
     };
 
     try {
-        const response = await proxyFetch(url, {
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
@@ -277,7 +225,7 @@ export const getBulkPageMetrics = async (accessToken: string, propertyId: string
     };
     
     try {
-        const response = await proxyFetch(url, {
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${accessToken}`,

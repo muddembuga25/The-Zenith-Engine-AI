@@ -149,26 +149,26 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess, theme, toggle
                             <LogoIcon className="h-16 w-16 text-brand-primary" />
                         </div>
                         <h1 className="text-5xl font-bold text-main leading-tight tracking-tight mb-6">
-                            Your Senior <br/>
-                            <span className="text-brand-primary text-glow">AI Engineer.</span>
+                            Autonomous Content <br/>
+                            <span className="text-brand-primary text-glow">Engineering.</span>
                         </h1>
                         <p className="text-lg text-sub mb-12 leading-relaxed">
-                            Experience fully automated GEO & SEO on autopilot. Zenith Engine AI handles strategy, creation, and publishing—completely hands-free.
+                            Zenith Engine AI isn't just a tool; it's your entire content team in code. Generate, optimize, and publish with precision.
                         </p>
                         
                         <div className="grid gap-6">
                             <div className="flex items-start gap-4 p-4 rounded-xl border border-border bg-panel/50 hover:border-brand-primary/30 transition-colors">
                                 <div className="p-2 bg-brand-primary/10 rounded-lg text-brand-primary"><SparklesIcon className="h-6 w-6" /></div>
                                 <div>
-                                    <h3 className="font-semibold text-main">GEO & SEO Autopilot</h3>
-                                    <p className="text-sm text-sub mt-1">Generative Engine Optimization running 24/7 without intervention.</p>
+                                    <h3 className="font-semibold text-main">AI-Driven SEO</h3>
+                                    <p className="text-sm text-sub mt-1">Strategic keyword analysis and optimized content generation.</p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-4 p-4 rounded-xl border border-border bg-panel/50 hover:border-brand-primary/30 transition-colors">
                                 <div className="p-2 bg-brand-primary/10 rounded-lg text-brand-primary"><ClockIcon className="h-6 w-6" /></div>
                                 <div>
-                                    <h3 className="font-semibold text-main">Senior-Level Strategy</h3>
-                                    <p className="text-sm text-sub mt-1">Autonomous decision making for high-intent keywords and content.</p>
+                                    <h3 className="font-semibold text-main">24/7 Automation</h3>
+                                    <p className="text-sm text-sub mt-1">Set schedules and let the engine run autonomously.</p>
                                 </div>
                             </div>
                         </div>

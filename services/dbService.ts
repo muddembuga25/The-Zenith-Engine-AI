@@ -12,26 +12,22 @@ export const verifySupabaseConnection = async (
     try {
         console.log(`[DB Service] Verifying Supabase connection to ${connection.url}`);
         
-        // We perform a lightweight fetch to the REST endpoint to verify credentials
-        // without needing to instantiate a full socket connection or rely on table existence.
-        const restUrl = `${connection.url}/rest/v1/`;
+        // Attempt to create a client with the provided credentials
+        const client = createSupabaseClient(connection.url, connection.anonKey);
         
-        const response = await fetch(restUrl, {
-            method: 'GET',
-            headers: {
-                'apikey': connection.anonKey,
-                'Authorization': `Bearer ${connection.anonKey}`
-            }
-        });
+        // Try a lightweight request to verify credentials. 
+        // We'll use auth.getSession() as it's a standard public endpoint.
+        const { error } = await client.auth.getSession();
 
-        // Supabase returns 200 OK for the root REST endpoint if the key is valid.
-        // It might return 404 depending on the specific configuration, but 401/403 denotes invalid auth.
-        if (response.ok || response.status === 404) {
-             return { success: true, message: 'Successfully connected to Supabase.' };
-        } else {
-             const data = await response.json().catch(() => ({}));
-             return { success: false, message: `Connection refused: ${data.message || response.statusText} (${response.status})` };
+        if (error) {
+             console.warn("Supabase verification error:", error);
+             if (error.message.includes('Failed to fetch')) {
+                 return { success: false, message: `Connection failed. The server could not be reached. Ensure the URL is correct and supports HTTPS (Mixed Content restriction).` };
+             }
+             return { success: false, message: `Connection established but returned error: ${error.message}` };
         }
+
+        return { success: true, message: 'Successfully connected to Supabase.' };
 
     } catch (e: any) {
         console.error("Supabase connection failed:", e);

@@ -1,6 +1,4 @@
 
-import { proxyFetch } from './secureBackendSimulation';
-
 export const fetchSheetData = async (sheetUrl: string, accessToken: string): Promise<string[] | null> => {
     try {
         const spreadsheetIdMatch = sheetUrl.match(/\/d\/(.*?)\//);
@@ -14,8 +12,7 @@ export const fetchSheetData = async (sheetUrl: string, accessToken: string): Pro
         
         const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`;
         
-        const response = await proxyFetch(apiUrl, {
-            method: 'GET',
+        const response = await fetch(apiUrl, {
             headers: {
                 'Authorization': `Bearer ${accessToken}`
             }

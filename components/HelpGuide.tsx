@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { XIcon, DocumentTextIcon, ClockIcon, WordPressIcon, SparklesIcon, PenIcon, LinkIcon, RssIcon, VideoCameraIcon, GoogleIcon, ShareIcon, MailIcon, ChartBarIcon, ScaleIcon, KeyIcon, ChevronDownIcon, MagnifyingGlassIcon } from './Icons';
 
@@ -11,7 +10,7 @@ const Section: React.FC<{ title: string, id: string, children: React.ReactNode }
         <h3 className="text-2xl font-bold text-main border-b border-border-subtle pb-3 mb-6">
             {title}
         </h3>
-        <div className="prose prose-sm prose-invert max-w-none prose-p:text-text-secondary prose-a:text-brand-primary hover:prose-a:text-brand-primary-hover prose-ul:list-disc prose-ul:ml-5 prose-ol:list-decimal prose-ol:ml-5 prose-code:text-brand-primary prose-code:bg-panel-light prose-code:p-1 prose-code:rounded-md prose-code:font-mono prose-strong:text-text-primary">
+        <div className="prose prose-sm prose-invert max-w-none prose-p:text-text-secondary prose-a:text-blue-400 hover:prose-a:text-blue-300 prose-ul:list-disc prose-ul:ml-5 prose-ol:list-decimal prose-ol:ml-5 prose-code:text-blue-300 prose-code:bg-panel-light prose-code:p-1 prose-code:rounded-md prose-code:font-mono prose-strong:text-text-primary">
             {children}
         </div>
     </div>
@@ -47,9 +46,9 @@ const guideContent = [
             <Section title="Step-by-Step Guide" id="getting-started-section">
                 <p>Welcome to Zenith Engine AI! Follow these steps to go from a simple idea to a fully SEO-optimized, published blog post in minutes.</p>
                 <ol>
-                    <li><strong>Connect Your Site:</strong> Go to the <strong className="text-brand-primary">Settings</strong> tab. Enter your WordPress URL, Username, and create an Application Password from your WP admin dashboard. Click Verify to confirm the connection.</li>
-                    <li><strong>Define Your Brand:</strong> Navigate to the <strong className="text-brand-primary">Branding & Context</strong> tab. Fill out the Brand Guideline. This is crucial for teaching the AI your unique voice, tone, and audience.</li>
-                    <li><strong>Add Content Ideas:</strong> Go to the <strong className="text-brand-primary">Content Hub</strong>. In the "Blog Posts" sub-tab, add your topics to the Keyword List, one per line.</li>
+                    <li><strong>Connect Your Site:</strong> Go to the <strong className="text-blue-300">Settings</strong> tab. Enter your WordPress URL, Username, and create an Application Password from your WP admin dashboard. Click Verify to confirm the connection.</li>
+                    <li><strong>Define Your Brand:</strong> Navigate to the <strong className="text-blue-300">Branding & Context</strong> tab. Fill out the Brand Guideline. This is crucial for teaching the AI your unique voice, tone, and audience.</li>
+                    <li><strong>Add Content Ideas:</strong> Go to the <strong className="text-blue-300">Content Hub</strong>. In the "Blog Posts" sub-tab, add your topics to the Keyword List, one per line.</li>
                     <li><strong>Generate Your Article:</strong> Click the "Generate Next Post" button. The AI will perform keyword research, create an SEO brief, write the article, and generate an image.</li>
                     <li><strong>Review and Publish:</strong> Once complete, a preview of the article appears. You can edit it if needed, then click "Publish" to send it directly to WordPress.</li>
                 </ol>
