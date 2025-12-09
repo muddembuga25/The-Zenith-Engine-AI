@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Deno files (prevent Nixpacks from detecting as Deno project)
+deno.json
+deno.lock
