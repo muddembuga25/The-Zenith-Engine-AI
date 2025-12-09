@@ -1,11 +1,5 @@
 # Nixpacks configuration for Zenith Engine AI
-# This ensures the project is detected as Node.js/Vite, not Deno
+# Explicitly set Node.js provider to prevent Deno detection
 
 [phases.setup]
 providers = ["node"]
-
-[phases.build]
-cmds = ["npm install", "npm run build"]
-
-[start]
-cmd = "npm run preview -- --host 0.0.0.0 --port $PORT"
