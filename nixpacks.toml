@@ -1,5 +1,0 @@
-# Nixpacks configuration for Zenith Engine AI
-# Explicitly set Node.js provider to prevent Deno detection
-
-[phases.setup]
-providers = ["node"]

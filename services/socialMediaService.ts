@@ -1,7 +1,7 @@
 
 import type { SocialMediaAccount, SocialMediaPost, WhatsAppAccount, TelegramAccount, Site, MetaAsset } from '../types';
 import type { SocialPlatform } from './oauthService';
-import * as secureBackend from './secureBackendSimulation';
+import { supabase } from './supabaseClient';
 
 // A union type for any kind of account for easier handling.
 type AnyAccount = SocialMediaAccount | WhatsAppAccount | TelegramAccount;
@@ -57,15 +57,25 @@ export const postToSocialMedia = async (
     media?: { type: 'image' | 'video'; data: string } // data can be base64 or URL
 ): Promise<{ success: boolean; message?: string }> => {
     
-    if (platform === 'whatsapp') {
-        return secureBackend.postToWhatsApp(account as WhatsAppAccount, post);
-    }
-    
-    if (platform === 'telegram') {
-        return secureBackend.postToTelegram(account as TelegramAccount, post, media);
+    // For WhatsApp and Telegram, we use the secure Edge Function.
+    if (platform === 'whatsapp' || platform === 'telegram') {
+        try {
+            const { data, error } = await supabase.functions.invoke('post-social', {
+                body: { platform, account, content: post, media }
+            });
+
+            if (error) throw new Error(error.message);
+            if (!data.success) throw new Error(data.error || 'Unknown error');
+
+            return { success: true };
+        } catch (e: any) {
+            console.error(`Error posting to ${platform}:`, e);
+            return { success: false, message: e.message };
+        }
     }
 
     // Keep simulation for other platforms due to frontend security constraints (client secrets)
+    // or lack of public API for direct client-side posting.
     let channelInfo = '';
     if (platform === 'youtube') {
         const ytAccount = account as SocialMediaAccount;

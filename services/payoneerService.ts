@@ -1,5 +1,6 @@
+
 import type { PayoneerConnection } from '../types';
-import * as secureBackend from './secureBackendSimulation';
+import { supabase } from './supabaseClient';
 
 export const verifyPayoneerConnection = async (
     connection: PayoneerConnection
@@ -10,6 +11,16 @@ export const verifyPayoneerConnection = async (
         return { success: false, message: 'Partner ID, Program ID, and API Key are required.' };
     }
 
-    // Delegate verification to the secure backend simulation for a live API call
-    return secureBackend.verifyPayoneerCredentials(connection);
+    try {
+        const { data, error } = await supabase.functions.invoke('verify-integration', {
+            body: { provider: 'payoneer', connection }
+        });
+
+        if (error) throw new Error(error.message);
+        if (!data.success) throw new Error(data.message || 'Verification failed');
+
+        return { success: true, message: data.message };
+    } catch (e: any) {
+        return { success: false, message: `Verification error: ${e.message}` };
+    }
 };

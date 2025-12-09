@@ -1,6 +1,6 @@
 
 import type { PaystackConnection } from '../types';
-import * as secureBackend from './secureBackendSimulation';
+import { supabase } from './supabaseClient';
 
 export const verifyPaystackConnection = async (
     connection: PaystackConnection
@@ -17,6 +17,17 @@ export const verifyPaystackConnection = async (
         return { success: false, message: 'Invalid Public Key format. It should start with pk_...' };
     }
     
-    // Delegate the secret key verification to the simulated secure backend.
-    return secureBackend.verifyPaystackSecretKey(connection);
+    // Delegate the secret key verification to the Supabase Edge Function.
+    try {
+        const { data, error } = await supabase.functions.invoke('verify-integration', {
+            body: { provider: 'paystack', connection }
+        });
+
+        if (error) throw new Error(error.message);
+        if (!data.success) throw new Error(data.message || 'Verification failed');
+
+        return { success: true, message: data.message };
+    } catch (e: any) {
+        return { success: false, message: `Verification error: ${e.message}` };
+    }
 };

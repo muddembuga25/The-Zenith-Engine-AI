@@ -1,5 +1,6 @@
+
 import type { StripeConnection } from '../types';
-import * as secureBackend from './secureBackendSimulation';
+import { supabase } from './supabaseClient';
 
 export const verifyStripeConnection = async (
     connection: StripeConnection
@@ -17,6 +18,16 @@ export const verifyStripeConnection = async (
         return { success: false, message: 'Invalid key format. Keys should start with pk_... and sk_...' };
     }
     
-    // Delegate secret key verification to the secure backend simulation for a live API call
-    return secureBackend.verifyStripeSecretKey(connection);
+    try {
+        const { data, error } = await supabase.functions.invoke('verify-integration', {
+            body: { provider: 'stripe', connection }
+        });
+
+        if (error) throw new Error(error.message);
+        if (!data.success) throw new Error(data.message || 'Verification failed');
+
+        return { success: true, message: data.message };
+    } catch (e: any) {
+        return { success: false, message: `Verification error: ${e.message}` };
+    }
 };

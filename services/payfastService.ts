@@ -1,5 +1,6 @@
+
 import type { PayfastConnection } from '../types';
-import * as secureBackend from './secureBackendSimulation';
+import { supabase } from './supabaseClient';
 
 export const verifyPayfastConnection = async (
     connection: PayfastConnection
@@ -10,6 +11,16 @@ export const verifyPayfastConnection = async (
         return { success: false, message: 'Merchant ID and Merchant Key are required.' };
     }
 
-    // Delegate verification to the secure backend simulation for a live API call
-    return secureBackend.verifyPayfastCredentials(connection);
+    try {
+        const { data, error } = await supabase.functions.invoke('verify-integration', {
+            body: { provider: 'payfast', connection }
+        });
+
+        if (error) throw new Error(error.message);
+        if (!data.success) throw new Error(data.message || 'Verification failed');
+
+        return { success: true, message: data.message };
+    } catch (e: any) {
+        return { success: false, message: `Verification error: ${e.message}` };
+    }
 };

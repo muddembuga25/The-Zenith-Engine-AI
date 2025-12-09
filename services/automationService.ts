@@ -36,44 +36,47 @@ import { getLatestLiveVideoFromMeta } from './oauthService';
 
 const JOB_TRACKER_KEY = 'zenith-engine-ai-running-jobs';
 
-// --- Job Tracking ---
-// In a browser, we use localStorage to share state between tabs/components.
-// In Node.js (backend worker), we use an in-memory store or simply don't track UI-specific job status
-// since the frontend won't see the backend's memory.
-// For true isomorphism, we guard the localStorage calls.
+// --- Job Tracking Abstraction ---
+// This allows the service to run in both Browser (localStorage UI feedback) 
+// and Node.js (Console logging) environments without crashing.
 
-const getRunningJobs = (): AutomationJob[] => {
-    if (typeof window === 'undefined') return [];
-    try {
-        const jobsJSON = localStorage.getItem(JOB_TRACKER_KEY);
-        return jobsJSON ? JSON.parse(jobsJSON) : [];
-    } catch {
-        return [];
+interface JobTracker {
+    add(job: AutomationJob): void;
+    update(jobId: string, update: Partial<AutomationJob>): void;
+    get(): AutomationJob[];
+}
+
+const BrowserJobTracker: JobTracker = {
+    get: () => {
+        try {
+            const jobsJSON = localStorage.getItem(JOB_TRACKER_KEY);
+            return jobsJSON ? JSON.parse(jobsJSON) : [];
+        } catch { return []; }
+    },
+    add: (job) => {
+        const jobs = BrowserJobTracker.get();
+        if (jobs.some(j => j.siteId === job.siteId && j.topic === job.topic && j.status !== AppStatus.ERROR && j.status !== AppStatus.PUBLISHED)) return;
+        localStorage.setItem(JOB_TRACKER_KEY, JSON.stringify([...jobs, job]));
+    },
+    update: (jobId, update) => {
+        const jobs = BrowserJobTracker.get();
+        const updatedJobs = jobs.map(j => j.jobId === jobId ? { ...j, ...update } : j);
+        localStorage.setItem(JOB_TRACKER_KEY, JSON.stringify(updatedJobs));
     }
 };
 
-const addRunningJob = (job: AutomationJob) => {
-    if (typeof window === 'undefined') {
-        console.log(`[JOB STARTED] ${job.jobId}: ${job.statusMessage}`);
-        return;
+const ConsoleJobTracker: JobTracker = {
+    get: () => [],
+    add: (job) => console.log(`[JOB START] ${job.jobId} (${job.topic}): ${job.statusMessage}`),
+    update: (jobId, update) => {
+        if (update.status === AppStatus.ERROR) console.error(`[JOB ERROR] ${jobId}: ${update.error}`);
+        else if (update.statusMessage) console.log(`[JOB UPDATE] ${jobId}: ${update.statusMessage}`);
     }
-    const jobs = getRunningJobs();
-    if (jobs.some(j => j.siteId === job.siteId && j.topic === job.topic && j.status !== AppStatus.ERROR && j.status !== AppStatus.PUBLISHED)) return;
-    localStorage.setItem(JOB_TRACKER_KEY, JSON.stringify([...jobs, job]));
 };
 
-const updateRunningJob = (jobId: string, update: Partial<AutomationJob>) => {
-    if (typeof window === 'undefined') {
-        if (update.statusMessage) console.log(`[JOB UPDATE] ${jobId}: ${update.statusMessage}`);
-        if (update.error) console.error(`[JOB ERROR] ${jobId}: ${update.error}`);
-        return;
-    }
-    const jobs = getRunningJobs();
-    const updatedJobs = jobs.map(j => j.jobId === jobId ? { ...j, ...update } : j);
-    localStorage.setItem(JOB_TRACKER_KEY, JSON.stringify(updatedJobs));
-};
+// Select tracker based on environment
+const tracker: JobTracker = typeof window !== 'undefined' ? BrowserJobTracker : ConsoleJobTracker;
 
-// ... (rest of the file logic remains largely the same, just utilizing the guarded functions)
 
 // --- Timezone Helpers ---
 
@@ -294,21 +297,21 @@ async function processBlogAutomation(user: User, site: Site, scheduleId?: string
         return;
     }
 
-    addRunningJob({ jobId, siteId: site.id, topic: sourceResult.topic, status: AppStatus.GENERATING_STRATEGY, statusMessage: 'Starting blog automation...' });
+    tracker.add({ jobId, siteId: site.id, topic: sourceResult.topic, status: AppStatus.GENERATING_STRATEGY, statusMessage: 'Starting blog automation...' });
 
     try {
         // 2. Generate Brief
-        updateRunningJob(jobId, { status: AppStatus.GENERATING_STRATEGY, statusMessage: 'Developing strategy...' });
+        tracker.update(jobId, { status: AppStatus.GENERATING_STRATEGY, statusMessage: 'Developing strategy...' });
         const { brief, costs: briefCosts } = await generateStrategicBriefFromKeyword(sourceResult.topic, site);
         for (const p in briefCosts) await logApiUsage(user, site.id, p as keyof ApiKeys, (briefCosts as any)[p]);
 
         // 3. Write Article
-        updateRunningJob(jobId, { status: AppStatus.GENERATING_ARTICLE, statusMessage: 'Drafting content...' });
+        tracker.update(jobId, { status: AppStatus.GENERATING_ARTICLE, statusMessage: 'Drafting content...' });
         const { postData, cost: writeCost, provider: writeProvider } = await generateArticleFromBrief(brief, site);
         await logApiUsage(user, site.id, writeProvider, writeCost);
 
         // 4. Generate Image
-        updateRunningJob(jobId, { status: AppStatus.GENERATING_IMAGE, statusMessage: 'Creating featured image...' });
+        tracker.update(jobId, { status: AppStatus.GENERATING_IMAGE, statusMessage: 'Creating featured image...' });
         const { base64Image, cost: imgCost, provider: imgProvider } = await generateFeaturedImage(postData.imagePrompt, site);
         await logApiUsage(user, site.id, imgProvider, imgCost);
 
@@ -316,7 +319,7 @@ async function processBlogAutomation(user: User, site: Site, scheduleId?: string
 
         // 5. In-Post Images (Optional)
         if (site.isInPostImagesEnabled && (site.numberOfInPostImages || 0) > 0) {
-             updateRunningJob(jobId, { statusMessage: 'Generating in-post images...' });
+             tracker.update(jobId, { statusMessage: 'Generating in-post images...' });
              const { processedHtml, cost: inPostCost, provider: inPostProvider } = await processNewInPostImages(fullPost.content, site);
              fullPost.content = processedHtml;
              await logApiUsage(user, site.id, inPostProvider, inPostCost);
@@ -327,13 +330,13 @@ async function processBlogAutomation(user: User, site: Site, scheduleId?: string
 
         // 7. Publish or Draft
         if (site.isAutoPublishEnabled) {
-            updateRunningJob(jobId, { status: AppStatus.PUBLISHING, statusMessage: 'Publishing to WordPress...' });
+            tracker.update(jobId, { status: AppStatus.PUBLISHING, statusMessage: 'Publishing to WordPress...' });
             const publishedUrl = await publishPost(site, fullPost, fullPost.focusKeyword);
             
             // 8. Generate Socials (Omnipresence)
             let socialPosts: Record<string, SocialMediaPost> = {};
             if (site.isOmnipresenceAutomationEnabled) {
-                updateRunningJob(jobId, { status: AppStatus.GENERATING_SOCIAL_POSTS, statusMessage: 'Generating social posts...' });
+                tracker.update(jobId, { status: AppStatus.GENERATING_SOCIAL_POSTS, statusMessage: 'Generating social posts...' });
                 const { posts, cost: socialCost, provider: socialProvider } = await generateSocialMediaPosts(fullPost, publishedUrl, site);
                 socialPosts = posts;
                 await logApiUsage(user, site.id, socialProvider, socialCost);
@@ -386,7 +389,7 @@ async function processBlogAutomation(user: User, site: Site, scheduleId?: string
                 return updated;
             });
 
-            updateRunningJob(jobId, { status: AppStatus.PUBLISHED, statusMessage: 'Blog post published successfully!' });
+            tracker.update(jobId, { status: AppStatus.PUBLISHED, statusMessage: 'Blog post published successfully!' });
 
         } else {
             // Save as Draft
@@ -406,12 +409,12 @@ async function processBlogAutomation(user: User, site: Site, scheduleId?: string
                 recurringSchedules: scheduleId ? s.recurringSchedules.map(sch => sch.id === scheduleId ? { ...sch, lastRun: Date.now() } : sch) : s.recurringSchedules
             }));
             
-            updateRunningJob(jobId, { status: AppStatus.PUBLISHED, statusMessage: 'Saved as Draft.' });
+            tracker.update(jobId, { status: AppStatus.PUBLISHED, statusMessage: 'Saved as Draft.' });
         }
 
     } catch (e: any) {
         console.error(`[BLOG AUTO] Error:`, e);
-        updateRunningJob(jobId, { status: AppStatus.ERROR, error: e.message, statusMessage: 'Failed.' });
+        tracker.update(jobId, { status: AppStatus.ERROR, error: e.message, statusMessage: 'Failed.' });
     }
 }
 
@@ -421,7 +424,7 @@ async function processSocialGraphicAutomation(user: User, site: Site, scheduleId
     
     if (!sourceResult) return;
 
-    addRunningJob({ jobId, siteId: site.id, topic: sourceResult.topic, status: AppStatus.GENERATING_IMAGE, statusMessage: 'Creating social graphic...' });
+    tracker.add({ jobId, siteId: site.id, topic: sourceResult.topic, status: AppStatus.GENERATING_IMAGE, statusMessage: 'Creating social graphic...' });
 
     try {
         const { base64Image, caption, imageCost, captionCost } = await generateSocialGraphicAndCaption(
@@ -447,7 +450,7 @@ async function processSocialGraphicAutomation(user: User, site: Site, scheduleId
             for (const platform of platforms) {
                 const accounts = socialMediaService.getEnabledDestinations(site, platform);
                 for (const account of accounts) {
-                    updateRunningJob(jobId, { statusMessage: `Posting to ${platform}...` });
+                    tracker.update(jobId, { statusMessage: `Posting to ${platform}...` });
                     await socialMediaService.postToSocialMedia(platform as any, account, { content: caption, hashtags: [] }, { type: 'image', data: base64Image });
                 }
             }
@@ -467,10 +470,10 @@ async function processSocialGraphicAutomation(user: User, site: Site, scheduleId
             return updated;
         });
 
-        updateRunningJob(jobId, { status: AppStatus.PUBLISHED, statusMessage: 'Social graphic processed.' });
+        tracker.update(jobId, { status: AppStatus.PUBLISHED, statusMessage: 'Social graphic processed.' });
 
     } catch (e: any) {
-        updateRunningJob(jobId, { status: AppStatus.ERROR, error: e.message });
+        tracker.update(jobId, { status: AppStatus.ERROR, error: e.message });
     }
 }
 
@@ -479,14 +482,14 @@ async function processSocialVideoAutomation(user: User, site: Site, scheduleId?:
     const sourceResult = await findNextSourceItem(site, site.socialVideoGenerationSource);
     if (!sourceResult) return;
 
-    addRunningJob({ jobId, siteId: site.id, topic: sourceResult.topic, status: AppStatus.GENERATING_IMAGE, statusMessage: 'Generating video...' });
+    tracker.add({ jobId, siteId: site.id, topic: sourceResult.topic, status: AppStatus.GENERATING_IMAGE, statusMessage: 'Generating video...' });
 
     try {
         const { videoUrl, caption, mcpId, videoCost, captionCost } = await generateSocialVideoAndCaption(
             `A viral social media video about: ${sourceResult.topic}`,
             site,
             null,
-            (msg) => updateRunningJob(jobId, { statusMessage: msg })
+            (msg) => tracker.update(jobId, { statusMessage: msg })
         );
         await logApiUsage(user, site.id, 'google', videoCost + captionCost);
 
@@ -504,7 +507,7 @@ async function processSocialVideoAutomation(user: User, site: Site, scheduleId?:
             for (const platform of platforms) {
                 const accounts = socialMediaService.getEnabledDestinations(site, platform);
                 for (const account of accounts) {
-                    updateRunningJob(jobId, { statusMessage: `Posting to ${platform}...` });
+                    tracker.update(jobId, { statusMessage: `Posting to ${platform}...` });
                     await socialMediaService.postToSocialMedia(platform as any, account, { content: caption, hashtags: [] }, { type: 'video', data: videoUrl });
                 }
             }
@@ -524,10 +527,10 @@ async function processSocialVideoAutomation(user: User, site: Site, scheduleId?:
             return updated;
         });
 
-        updateRunningJob(jobId, { status: AppStatus.PUBLISHED, statusMessage: 'Social video processed.' });
+        tracker.update(jobId, { status: AppStatus.PUBLISHED, statusMessage: 'Social video processed.' });
 
     } catch (e: any) {
-        updateRunningJob(jobId, { status: AppStatus.ERROR, error: e.message });
+        tracker.update(jobId, { status: AppStatus.ERROR, error: e.message });
     }
 }
 
@@ -536,13 +539,13 @@ async function processEmailAutomation(user: User, site: Site, scheduleId?: strin
     const sourceResult = await findNextSourceItem(site, site.emailMarketingGenerationSource);
     if (!sourceResult) return;
 
-    addRunningJob({ jobId, siteId: site.id, topic: sourceResult.topic, status: AppStatus.GENERATING_STRATEGY, statusMessage: 'Generating email campaign...' });
+    tracker.add({ jobId, siteId: site.id, topic: sourceResult.topic, status: AppStatus.GENERATING_STRATEGY, statusMessage: 'Generating email campaign...' });
 
     try {
         const { subject, body, cost, provider } = await generateEmailCampaign(sourceResult.topic, site);
         await logApiUsage(user, site.id, provider, cost);
 
-        updateRunningJob(jobId, { statusMessage: 'Sending campaign...' });
+        tracker.update(jobId, { statusMessage: 'Sending campaign...' });
         const { success, message } = await mailchimpService.sendCampaign(subject, body, site);
 
         if (!success) throw new Error(message);
@@ -570,10 +573,10 @@ async function processEmailAutomation(user: User, site: Site, scheduleId?: strin
             return updated;
         });
 
-        updateRunningJob(jobId, { status: AppStatus.PUBLISHED, statusMessage: 'Email campaign sent.' });
+        tracker.update(jobId, { status: AppStatus.PUBLISHED, statusMessage: 'Email campaign sent.' });
 
     } catch (e: any) {
-        updateRunningJob(jobId, { status: AppStatus.ERROR, error: e.message });
+        tracker.update(jobId, { status: AppStatus.ERROR, error: e.message });
     }
 }
 

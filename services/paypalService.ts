@@ -1,5 +1,6 @@
+
 import type { PayPalConnection } from '../types';
-import * as secureBackend from './secureBackendSimulation';
+import { supabase } from './supabaseClient';
 
 export const verifyPayPalConnection = async (
     connection: PayPalConnection
@@ -10,6 +11,16 @@ export const verifyPayPalConnection = async (
         return { success: false, message: 'Client ID and Client Secret are required.' };
     }
 
-    // Delegate verification to the secure backend simulation for a live API call
-    return secureBackend.verifyPayPalCredentials(connection);
+    try {
+        const { data, error } = await supabase.functions.invoke('verify-integration', {
+            body: { provider: 'paypal', connection }
+        });
+
+        if (error) throw new Error(error.message);
+        if (!data.success) throw new Error(data.message || 'Verification failed');
+
+        return { success: true, message: data.message };
+    } catch (e: any) {
+        return { success: false, message: `Verification error: ${e.message}` };
+    }
 };

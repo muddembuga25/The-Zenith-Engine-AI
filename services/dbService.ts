@@ -1,6 +1,6 @@
 
 import type { SupabaseConnection } from '../types';
-import { createSupabaseClient } from './supabaseClient';
+import { supabase } from './supabaseClient';
 
 export const verifySupabaseConnection = async (
     connection: SupabaseConnection
@@ -12,22 +12,14 @@ export const verifySupabaseConnection = async (
     try {
         console.log(`[DB Service] Verifying Supabase connection to ${connection.url}`);
         
-        // Attempt to create a client with the provided credentials
-        const client = createSupabaseClient(connection.url, connection.anonKey);
-        
-        // Try a lightweight request to verify credentials. 
-        // We'll use auth.getSession() as it's a standard public endpoint.
-        const { error } = await client.auth.getSession();
+        const { data, error } = await supabase.functions.invoke('verify-integration', {
+            body: { provider: 'supabase', connection }
+        });
 
-        if (error) {
-             console.warn("Supabase verification error:", error);
-             if (error.message.includes('Failed to fetch')) {
-                 return { success: false, message: `Connection failed. The server could not be reached. Ensure the URL is correct and supports HTTPS (Mixed Content restriction).` };
-             }
-             return { success: false, message: `Connection established but returned error: ${error.message}` };
-        }
+        if (error) throw new Error(error.message);
+        if (!data.success) throw new Error(data.message || 'Verification failed');
 
-        return { success: true, message: 'Successfully connected to Supabase.' };
+        return { success: true, message: data.message };
 
     } catch (e: any) {
         console.error("Supabase connection failed:", e);
