@@ -1,6 +1,7 @@
 
 import type { SupabaseConnection } from '../types';
-import { supabase } from './supabaseClient';
+
+const API_BASE = typeof window === 'undefined' ? 'http://localhost:3000/api' : '/api';
 
 export const verifySupabaseConnection = async (
     connection: SupabaseConnection
@@ -10,19 +11,18 @@ export const verifySupabaseConnection = async (
     }
 
     try {
-        console.log(`[DB Service] Verifying Supabase connection to ${connection.url}`);
-        
-        const { data, error } = await supabase.functions.invoke('verify-integration', {
-            body: { provider: 'supabase', connection }
+        const res = await fetch(`${API_BASE}/verify-integration`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ provider: 'supabase', connection })
         });
 
-        if (error) throw new Error(error.message);
-        if (!data.success) throw new Error(data.message || 'Verification failed');
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Verification failed');
 
         return { success: true, message: data.message };
 
     } catch (e: any) {
-        console.error("Supabase connection failed:", e);
         return { success: false, message: `Connection failed: ${e.message}` };
     }
 };

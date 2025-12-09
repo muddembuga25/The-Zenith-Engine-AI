@@ -1,6 +1,7 @@
 
 import type { RssItem } from '../types';
-import { supabase } from './supabaseClient';
+
+const API_BASE = typeof window === 'undefined' ? 'http://localhost:3000/api' : '/api';
 
 export interface RssFeedResult {
   title: string;
@@ -29,7 +30,6 @@ const parseXmlRegex = (xml: string): RssFeedResult => {
         const guid = getTag('guid') || getTag('id') || link || title;
         let description = getTag('description') || getTag('content') || getTag('summary');
         
-        // Strip HTML
         description = description.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
         if (description.length > 250) description = description.substring(0, 250) + '...';
 
@@ -43,12 +43,13 @@ export const fetchAndParseRssFeed = async (url: string): Promise<RssFeedResult> 
     if (!url.trim()) throw new Error("RSS Feed URL cannot be empty.");
     
     try {
-        // Use the secure proxy function
-        const { data, error } = await supabase.functions.invoke('proxy-request', {
-            body: { url, method: 'GET' }
+        const res = await fetch(`${API_BASE}/proxy-request`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, method: 'GET' })
         });
 
-        if (error) throw new Error(error.message);
+        const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Failed to fetch RSS feed via proxy');
 
         const text = typeof data.data === 'string' ? data.data : JSON.stringify(data.data);

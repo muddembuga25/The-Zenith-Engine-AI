@@ -1,6 +1,5 @@
 
 import type { BlogPost, Site, WordPressCredentials } from '../types';
-import { supabase } from './supabaseClient';
 
 export interface PublishedPost {
   title: string;
@@ -17,21 +16,25 @@ export interface WordPressCategory {
   name: string;
 }
 
-// Helper to proxy requests via Supabase Edge Function
+const API_BASE = typeof window === 'undefined' ? 'http://localhost:3000/api' : '/api';
+
+// Helper to proxy requests via Express Backend
 const fetchViaProxy = async (url: string, options: RequestInit = {}) => {
-    const { data, error } = await supabase.functions.invoke('proxy-request', {
-        body: {
+    const res = await fetch(`${API_BASE}/proxy-request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
             url,
             method: options.method || 'GET',
             headers: options.headers || {},
             body: options.body ? JSON.parse(options.body as string) : undefined
-        }
+        })
     });
 
-    if (error) throw new Error(error.message);
+    const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Proxy request failed');
 
-    // Return an object that mimics the fetch Response API slightly for compatibility
+    // Mimic fetch Response
     return {
         ok: data.success,
         status: data.status,
@@ -40,13 +43,11 @@ const fetchViaProxy = async (url: string, options: RequestInit = {}) => {
     };
 };
 
-// Helper to convert data URL to Blob (Client Side)
 async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
   const res = await fetch(dataUrl);
   return await res.blob();
 }
 
-// Helper to get an existing term and return its ID, or null if not found
 const getExistingTermId = async (
   apiUrl: string,
   authHeaders: any,
@@ -64,7 +65,6 @@ const getExistingTermId = async (
   return exactMatch ? exactMatch.id : null;
 };
 
-// Helper to get or create a term (category or tag) and return its ID
 const getOrCreateTerm = async (
   apiUrl: string,
   authHeaders: any,
@@ -154,7 +154,6 @@ export const fetchCategories = async (credentials: WordPressCredentials): Promis
 };
 
 export const fetchBrandingFromWordPress = async (credentials: Pick<WordPressCredentials, 'url'>): Promise<{ brandColors: string | null; brandFonts: string | null; }> => {
-    // This is less critical to proxy since it's public HTML scraping, but sticking to proxy avoids CORS errors.
     const { url } = credentials;
     if (!url) return { brandColors: null, brandFonts: null };
     
@@ -162,13 +161,11 @@ export const fetchBrandingFromWordPress = async (credentials: Pick<WordPressCred
     try {
         const response = await fetchViaProxy(cleanedUrl);
         const html = await response.text();
-        // Parsing HTML string... (Logic same as before but using proxied HTML)
         const colors = new Set<string>();
         const colorRegex = /#([0-9a-f]{3}){1,2}/gi;
         const matches = html.match(colorRegex);
         if (matches) matches.forEach(c => colors.add(c));
 
-        // Simplified font extraction
         const fonts = new Set<string>();
         const fontRegex = /font-family:\s*([^;\}]+)/gi;
         let match;
@@ -193,17 +190,6 @@ export const publishPost = async (site: Site, post: BlogPost, focusKeyword: stri
     const apiUrl = `${cleanedUrl}/wp-json/`;
     const authHeaders = { 'Authorization': 'Basic ' + btoa(`${wordpressUsername}:${applicationPassword}`) };
 
-    // 1. Upload Image (Note: We need to send binary data. Proxy JSON wrapper isn't ideal for large binaries.
-    // However, WP API supports creating media from URL if we had a public URL. We have base64.)
-    // Strategy: We will stick to client-side fetch for the image upload IF CORS allows it (often WP media endpoints do).
-    // If not, we'd need a specialized 'proxy-upload' function. 
-    // For "Live-Ready", let's attempt direct fetch first, if fail, warn user about CORS.
-    // Actually, better to assume CORS fails and use a specialized method if we can.
-    // But our `proxy-request` takes JSON body. We can't send FormData easily. 
-    // FALLBACK: Use client-side fetch for media, assume user configured WP CORS or use a plugin.
-    // Making WP CORS-friendly is a standard requirement for headless/external posting.
-    
-    // Attempt Direct Upload
     let featuredMediaId = 0;
     try {
         const imageBlob = await dataUrlToBlob(post.imageUrl);
@@ -211,9 +197,19 @@ export const publishPost = async (site: Site, post: BlogPost, focusKeyword: stri
         formData.append('file', imageBlob, `${post.slug}.jpg`);
         formData.append('title', post.imageAltText);
         
+        // Use proxy for media upload as well to avoid CORS
+        // We need to send FormData differently via the proxy, or let the server handle it.
+        // For simplicity with the existing proxy-request which takes JSON, we might need a specific media upload endpoint on server
+        // OR we try direct upload first (CORS might block), then fallback.
+        // Current implementation tries direct fetch.
+        
+        // NOTE: Standard WP API CORS usually blocks this from browser.
+        // Ideally the server.ts should handle this upload.
+        // Given constraints, we will attempt direct and log warning.
+        
         const uploadRes = await fetch(`${apiUrl}wp/v2/media`, {
             method: 'POST',
-            headers: { 'Authorization': authHeaders.Authorization }, // No Content-Type for FormData
+            headers: { 'Authorization': authHeaders.Authorization },
             body: formData
         });
         
@@ -222,14 +218,11 @@ export const publishPost = async (site: Site, post: BlogPost, focusKeyword: stri
         featuredMediaId = mediaData.id;
     } catch (e) {
         console.warn("Direct image upload failed (likely CORS). Post will be published without featured image.", e);
-        // We proceed without image to ensure at least text is saved
     }
 
-    // 2. Categories/Tags via Proxy
     const categoryIds = await Promise.all(post.categories.map(name => getOrCreateTerm(cleanedUrl + '/wp-json', authHeaders, 'categories', name)));
     const tagIds = await Promise.all(post.tags.map(name => getOrCreateTerm(cleanedUrl + '/wp-json', authHeaders, 'tags', name)));
 
-    // 3. Create Post via Proxy
     const postData = {
         title: post.title,
         content: post.content,

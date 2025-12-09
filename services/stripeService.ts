@@ -1,6 +1,7 @@
 
 import type { StripeConnection } from '../types';
-import { supabase } from './supabaseClient';
+
+const API_BASE = typeof window === 'undefined' ? 'http://localhost:3000/api' : '/api';
 
 export const verifyStripeConnection = async (
     connection: StripeConnection
@@ -19,12 +20,14 @@ export const verifyStripeConnection = async (
     }
     
     try {
-        const { data, error } = await supabase.functions.invoke('verify-integration', {
-            body: { provider: 'stripe', connection }
+        const res = await fetch(`${API_BASE}/verify-integration`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ provider: 'stripe', connection })
         });
 
-        if (error) throw new Error(error.message);
-        if (!data.success) throw new Error(data.message || 'Verification failed');
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Verification failed');
 
         return { success: true, message: data.message };
     } catch (e: any) {

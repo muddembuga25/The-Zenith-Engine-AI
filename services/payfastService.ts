@@ -1,6 +1,7 @@
 
 import type { PayfastConnection } from '../types';
-import { supabase } from './supabaseClient';
+
+const API_BASE = typeof window === 'undefined' ? 'http://localhost:3000/api' : '/api';
 
 export const verifyPayfastConnection = async (
     connection: PayfastConnection
@@ -12,12 +13,14 @@ export const verifyPayfastConnection = async (
     }
 
     try {
-        const { data, error } = await supabase.functions.invoke('verify-integration', {
-            body: { provider: 'payfast', connection }
+        const res = await fetch(`${API_BASE}/verify-integration`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ provider: 'payfast', connection })
         });
 
-        if (error) throw new Error(error.message);
-        if (!data.success) throw new Error(data.message || 'Verification failed');
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Verification failed');
 
         return { success: true, message: data.message };
     } catch (e: any) {
