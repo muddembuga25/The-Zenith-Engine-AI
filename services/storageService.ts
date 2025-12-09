@@ -5,6 +5,7 @@ import type { Site, User, GlobalSettings } from '../types';
 const OAUTH_STATE_KEY = 'zenith_oauth_state';
 const PKCE_VERIFIER_KEY = 'zenith_pkce_verifier';
 const GLOBAL_SETTINGS_KEY = 'zenith-engine-ai-global-settings';
+const GLOBAL_SETTINGS_DB_ID = 'global_config';
 
 export const storageService = {
   // --- SITE MANAGEMENT (Supabase Source of Truth) ---
@@ -168,19 +169,68 @@ export const storageService = {
     localStorage.removeItem(PKCE_VERIFIER_KEY);
   },
 
-  // Global settings (Gateways, etc) - Ideally move to a 'system_settings' table in Supabase
-  // but for now, we'll keep local or implement a simple remote fetch if needed.
-  // For production, this should be in the DB accessible only by admins.
-  loadGlobalSettings: (): GlobalSettings => {
+  // --- GLOBAL SETTINGS (SECURE BACKEND STORAGE) ---
+  
+  loadGlobalSettings: async (): Promise<GlobalSettings> => {
       try {
-          const settings = localStorage.getItem(GLOBAL_SETTINGS_KEY);
-          return settings ? JSON.parse(settings) : {};
-      } catch {
+          // 1. Attempt to fetch from Supabase first
+          const { data, error } = await supabase
+              .from('system_settings')
+              .select('data')
+              .eq('id', GLOBAL_SETTINGS_DB_ID)
+              .single();
+
+          if (!error && data) {
+              return data.data as GlobalSettings;
+          }
+
+          // 2. Fallback / Migration: Check LocalStorage
+          // If we have local settings but nothing in DB (or DB failed), try to use local
+          // and attempt to migrate them to DB if possible.
+          const localSettingsJson = localStorage.getItem(GLOBAL_SETTINGS_KEY);
+          if (localSettingsJson) {
+              console.log("Migrating Global Settings from LocalStorage to Supabase...");
+              const parsedSettings = JSON.parse(localSettingsJson);
+              
+              // Attempt to save to DB immediately to complete migration
+              await storageService.saveGlobalSettings(parsedSettings);
+              
+              // Optionally clear local to enforce security, or keep as backup? 
+              // For security, we should eventually remove it, but keeping for safety during dev.
+              // localStorage.removeItem(GLOBAL_SETTINGS_KEY); 
+              
+              return parsedSettings;
+          }
+
+          return {};
+      } catch (e) {
+          console.warn("Failed to load global settings:", e);
           return {};
       }
   },
 
-  saveGlobalSettings: (settings: GlobalSettings) => {
-      localStorage.setItem(GLOBAL_SETTINGS_KEY, JSON.stringify(settings));
+  saveGlobalSettings: async (settings: GlobalSettings) => {
+      try {
+          // Save to Supabase
+          const { error } = await supabase
+              .from('system_settings')
+              .upsert({ 
+                  id: GLOBAL_SETTINGS_DB_ID, 
+                  data: settings, 
+                  updated_at: new Date().toISOString() 
+              });
+
+          if (error) {
+              console.error("Failed to save global settings to DB:", error);
+              // Fallback to local storage if DB write fails, to ensure app doesn't break
+              localStorage.setItem(GLOBAL_SETTINGS_KEY, JSON.stringify(settings));
+              throw error; 
+          } else {
+              // On successful DB save, we can remove local storage to ensure security
+              localStorage.removeItem(GLOBAL_SETTINGS_KEY);
+          }
+      } catch (e) {
+          throw e;
+      }
   }
 };

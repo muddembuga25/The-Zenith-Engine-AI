@@ -121,7 +121,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onI
         const loadData = async () => {
             const allUsers = await authService.getAllUsers();
             setUsers(allUsers);
-            const settings = storageService.loadGlobalSettings();
+            const settings = await storageService.loadGlobalSettings();
             setGlobalSettings(settings);
         };
         loadData();
@@ -153,11 +153,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onI
         }
     };
 
-    const handleUpdateGlobalSettings = (updates: Partial<GlobalSettings>) => {
+    const handleUpdateGlobalSettings = async (updates: Partial<GlobalSettings>) => {
         const newSettings = { ...globalSettings, ...updates };
         setGlobalSettings(newSettings);
-        storageService.saveGlobalSettings(newSettings);
-        toast.addToast('Global settings updated', 'success');
+        try {
+            await storageService.saveGlobalSettings(newSettings);
+            toast.addToast('Global settings updated', 'success');
+        } catch (e: any) {
+            toast.addToast(`Failed to save settings: ${e.message}`, 'error');
+        }
     };
 
     // Global connection verify handlers placeholders - these call services

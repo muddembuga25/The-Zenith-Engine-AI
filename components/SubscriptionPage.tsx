@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import type { User, SubscriptionPlan, GlobalSettings } from '../types';
+import { storageService } from '../services/storageService';
 import { CheckCircleIcon, LightbulbIcon, XIcon, CreditCardIcon, ArrowRightIcon, UserIcon, PenIcon, SparklesIcon, BuildingOffice2Icon } from './Icons';
 
 declare global {
@@ -153,12 +154,15 @@ const PlanSelectionView: React.FC<{
     const [globalSettings, setGlobalSettings] = useState<GlobalSettings | null>(null);
 
     useEffect(() => {
-        // In a real app with a backend, these would be fetched.
-        // For this frontend-only app, we retrieve them from localStorage.
-        const storedSettings = localStorage.getItem('zenith-engine-ai-global-settings');
-        if (storedSettings) {
-            setGlobalSettings(JSON.parse(storedSettings));
-        }
+        const fetchSettings = async () => {
+            try {
+                const settings = await storageService.loadGlobalSettings();
+                setGlobalSettings(settings);
+            } catch (e) {
+                console.error("Failed to load global payment settings", e);
+            }
+        };
+        fetchSettings();
     }, []);
 
     const currentPlan = currentUser.subscriptionPlan;
