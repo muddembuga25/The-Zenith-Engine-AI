@@ -1,1 +1,1 @@
-// This file is deprecated. Please use services/dbService.ts.
+// DEPRECATED: File has been removed.

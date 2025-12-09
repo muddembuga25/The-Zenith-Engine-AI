@@ -70,7 +70,7 @@ export interface PayPalConnection {
 export type SubscriptionPlan = 'free' | 'creator' | 'pro' | 'agency';
 
 export interface User {
-  uid: string; // Firebase User ID
+  uid: string; // Supabase User ID
   email: string;
   username?: string;
   firstName?: string;
