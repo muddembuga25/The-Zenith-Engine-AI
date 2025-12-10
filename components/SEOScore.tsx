@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { RadialBarChart, RadialBar, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 import { SeoChecklist } from '../types';
@@ -124,7 +125,7 @@ export const SEOScore: React.FC<SEOScoreProps> = ({ score, checklist }) => {
                 </ul>
             </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 };
