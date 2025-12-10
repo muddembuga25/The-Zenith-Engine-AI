@@ -327,10 +327,13 @@ app.all('/api/proxy-request', async (req, res) => {
 });
 
 // --- Serve Frontend ---
-app.use(express.static(path.join(__dirname, 'dist')));
+// Use absolute path for Docker reliability
+const distPath = path.join(__dirname, 'dist');
+app.use(express.static(distPath));
 
+// Handle client-side routing, return all requests to index.html
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
 // --- Start Server & Scheduler ---

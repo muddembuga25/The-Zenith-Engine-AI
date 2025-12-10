@@ -1,3 +1,4 @@
+
 version: '3.8'
 
 services:
@@ -9,6 +10,12 @@ services:
       - redis_data:/data
     networks:
       - zenith-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
 
   worker:
     build: .
@@ -25,28 +32,32 @@ services:
       - EMAIL_CONCURRENCY=${EMAIL_CONCURRENCY:-10}
       - MONITOR_CONCURRENCY=${MONITOR_CONCURRENCY:-5}
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     deploy:
       mode: replicated
-      replicas: 2 # Horizontal Scaling: Run 2 instances of the worker
+      replicas: 1
     networks:
       - zenith-net
+    restart: always
 
-  # Optional: The HTTP API Server
   api:
     build: .
     command: npm run start:server
     ports:
       - "3000:3000"
     environment:
+      - PORT=3000
       - REDIS_URL=redis://redis:6379
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
       - API_KEY=${API_KEY}
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     networks:
       - zenith-net
+    restart: always
 
 volumes:
   redis_data:
