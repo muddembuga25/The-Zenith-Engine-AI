@@ -6,6 +6,7 @@ import { createClient } from '@supabase/supabase-js';
 // We check for both REACT_APP_ prefixed variables (Frontend) and standard variables (Backend/Node)
 const envUrl = process.env.REACT_APP_SUPABASE_URL || process.env.SUPABASE_URL;
 const envKey = process.env.REACT_APP_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+const envReadUrl = process.env.SUPABASE_READ_URL; // Optional: URL for Read Replica
 
 // CRITICAL FIX: Prevent crash if variables are missing by using placeholders.
 // The app will load, but network requests will fail until real keys are provided in .env
@@ -19,6 +20,7 @@ if (!envUrl || !envKey) {
   }
 }
 
+// Primary Client (Write Operations)
 export const supabase = createClient(
   supabaseUrl, 
   supabaseAnonKey,
@@ -30,6 +32,19 @@ export const supabase = createClient(
     }
   }
 );
+
+// Secondary Client (Read Operations)
+// If SUPABASE_READ_URL is provided (e.g. pointing to a replica), use it.
+// Otherwise, fallback to the primary client to keep the app functional without extra config.
+export const supabaseRead = envReadUrl 
+    ? createClient(envReadUrl, supabaseAnonKey, {
+        auth: {
+            persistSession: false, // Read client typically doesn't need session persistence in this context
+            autoRefreshToken: false,
+            detectSessionInUrl: false
+        }
+      })
+    : supabase;
 
 // Helper to create a client with specific credentials (used for verifying external connections if needed)
 export const createSupabaseClient = (url: string, key: string) => {

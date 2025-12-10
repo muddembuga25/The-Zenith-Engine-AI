@@ -2,8 +2,9 @@
 import type { WhatsAppAccount, TelegramAccount, MetaAsset, Site, MetaAdsAccount, GoogleAdsAccount } from '../types';
 import { storageService } from './storageService';
 
-const CORS_PROXY_URL = 'https://cors-anywhere.herokuapp.com/';
-const API_BASE = typeof window === 'undefined' ? 'http://localhost:3000/api' : '/api';
+const isBrowser = typeof window !== 'undefined';
+const CORS_PROXY_URL = isBrowser ? 'https://cors-anywhere.herokuapp.com/' : '';
+const API_BASE = isBrowser ? '/api' : (process.env.INTERNAL_API_BASE_URL || 'http://localhost:3000/api');
 
 const getRedirectUri = () => {
     if (typeof window !== 'undefined') {

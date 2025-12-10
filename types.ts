@@ -70,7 +70,7 @@ export interface PayPalConnection {
 export type SubscriptionPlan = 'free' | 'creator' | 'pro' | 'agency';
 
 export interface User {
-  uid: string; // Supabase User ID
+  uid: string; // Firebase User ID
   email: string;
   username?: string;
   firstName?: string;
@@ -279,7 +279,7 @@ export interface SocialMediaAccount {
     accessToken?: string | null;
     clientId?: string;
     clientSecret?: string;
-    destinationType?: 'profile' | 'page' | 'group' | 'channel';
+    destinationType?: 'profile' | 'page' | 'group';
     destinationId?: string;
     status: SocialAccountStatus;
     statusMessage?: string;
@@ -553,6 +553,7 @@ export interface LiveBroadcastAutomation {
   statusMessage?: string;
   currentWeekClips: LiveBroadcastClip[];
   lastRunTimestamp?: number;
+  nextLiveMonitorRun?: number; // Phase 2: Next scheduled check
 }
 
 export enum AutomationWorkflow {
@@ -613,6 +614,7 @@ export interface Site {
   automationDailyTime: string;
   automationTimezone: string;
   lastAutoPilotRun?:number; // Unix timestamp in ms
+  nextBlogAutoRun?: number; // Phase 2: Targeted timestamp for next run
   recurringSchedules: RecurringSchedule[];
   drafts: Draft[];
   isOmnipresenceAutomationEnabled?: boolean;
@@ -654,6 +656,7 @@ export interface Site {
   socialGraphicAutomationTrigger: 'daily' | 'schedule';
   socialGraphicDailyTime: string;
   lastSocialGraphicAutoPilotRun?: number;
+  nextSocialGraphicAutoRun?: number; // Phase 2
   socialGraphicRecurringSchedules: RecurringSchedule[];
   socialGraphicGenerationSource: 'keyword' | 'rss' | 'video' | 'google_sheet' | 'newly_published_post';
   
@@ -663,6 +666,7 @@ export interface Site {
   socialVideoAutomationTrigger: 'daily' | 'schedule';
   socialVideoDailyTime: string;
   lastSocialVideoAutoPilotRun?: number;
+  nextSocialVideoAutoRun?: number; // Phase 2
   socialVideoRecurringSchedules: RecurringSchedule[];
   socialVideoGenerationSource: 'keyword' | 'rss' | 'video' | 'google_sheet' | 'newly_published_post';
 
@@ -671,6 +675,7 @@ export interface Site {
   emailMarketingAutomationTrigger: 'daily' | 'schedule';
   emailMarketingDailyTime: string;
   lastEmailMarketingAutoPilotRun?: number;
+  nextEmailAutoRun?: number; // Phase 2
   emailMarketingRecurringSchedules: RecurringSchedule[];
   emailMarketingGenerationSource: 'keyword' | 'rss' | 'video' | 'google_sheet' | 'newly_published_post';
 

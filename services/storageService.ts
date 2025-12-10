@@ -1,5 +1,5 @@
 
-import { supabase } from './supabaseClient';
+import { supabase, supabaseRead } from './supabaseClient';
 import type { Site, User, GlobalSettings } from '../types';
 
 const OAUTH_STATE_KEY = 'zenith_oauth_state';
@@ -12,8 +12,8 @@ export const storageService = {
   loadSitesAndLastId: async (user: User): Promise<{ sites: Site[]; lastSelectedId: string | null }> => {
     if (!user) return { sites: [], lastSelectedId: null };
 
-    // Fetch sites from Supabase
-    const { data, error } = await supabase
+    // Fetch sites from Supabase using READ client
+    const { data, error } = await supabaseRead
         .from('sites')
         .select('*')
         .eq('owner_id', user.uid)
@@ -38,7 +38,8 @@ export const storageService = {
   },
 
   getSites: async (userId: string): Promise<Site[]> => {
-      const { data, error } = await supabase
+      // Use READ client for fetching sites
+      const { data, error } = await supabaseRead
         .from('sites')
         .select('data, id')
         .eq('owner_id', userId);
@@ -50,7 +51,7 @@ export const storageService = {
   saveSites: async (sites: Site[], user: User) => {
     if (!user || sites.length === 0) return;
     
-    // Upsert sites to Supabase
+    // Upsert sites to Supabase using WRITE client
     const upsertData = sites.map(site => ({
         id: site.id,
         owner_id: user.uid,
@@ -68,6 +69,7 @@ export const storageService = {
 
   saveAllSites: async (userId: string, sites: Site[]) => {
       // Used by automation worker (Node.js context)
+      // Use WRITE client
       const upsertData = sites.map(site => ({
           id: site.id,
           owner_id: userId,
@@ -81,7 +83,7 @@ export const storageService = {
   },
 
   saveLastSelectedSiteId: async (userId: string, siteId: string) => {
-    // 1. Reset selection for this user
+    // 1. Reset selection for this user (Write)
     const { error: resetError } = await supabase
         .from('sites')
         .update({ is_selected: false })
@@ -89,7 +91,7 @@ export const storageService = {
         
     if (resetError) console.error("Error resetting site selection:", resetError);
 
-    // 2. Set new selection
+    // 2. Set new selection (Write)
     const { error: setError } = await supabase
         .from('sites')
         .update({ is_selected: true })
@@ -100,6 +102,7 @@ export const storageService = {
 
   clearAllSitesData: async (user: User) => {
       if (!user) return;
+      // Write operation
       const { error } = await supabase.from('sites').delete().eq('owner_id', user.uid);
       if (error) console.error("Error clearing sites remotely:", error);
   },
@@ -112,9 +115,8 @@ export const storageService = {
           if (localSitesJson) {
               const localSites = JSON.parse(localSitesJson);
               if (Array.isArray(localSites) && localSites.length > 0) {
-                  // Only migrate if remote has no sites? Or upsert?
-                  // Let's check remote count first
-                  const { count } = await supabase.from('sites').select('*', { count: 'exact', head: true }).eq('owner_id', user.uid);
+                  // Check remote count first (Read)
+                  const { count } = await supabaseRead.from('sites').select('*', { count: 'exact', head: true }).eq('owner_id', user.uid);
                   
                   if (count === 0) {
                       console.log("Migrating local sites to Supabase for user:", user.email);

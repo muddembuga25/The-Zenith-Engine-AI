@@ -1,7 +1,9 @@
 
 import type { RssItem } from '../types';
 
-const API_BASE = typeof window === 'undefined' ? 'http://localhost:3000/api' : '/api';
+const API_BASE = typeof window === 'undefined' 
+    ? (process.env.INTERNAL_API_BASE_URL || 'http://localhost:3000/api') 
+    : '/api';
 
 export interface RssFeedResult {
   title: string;

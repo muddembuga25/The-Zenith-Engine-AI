@@ -9,15 +9,18 @@
     "preview": "vite preview",
     "start": "tsx server.ts",
     "start:server": "tsx server.ts",
+    "start:worker": "tsx backend/worker-service.ts",
     "lint": "eslint ."
   },
   "dependencies": {
     "@google/genai": "^0.1.1",
     "@supabase/supabase-js": "^2.39.3",
+    "bullmq": "^5.4.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.1",
     "express": "^4.18.2",
     "firebase": "^10.8.0",
+    "ioredis": "^5.3.2",
     "node-fetch": "^3.3.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

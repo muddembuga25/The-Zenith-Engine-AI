@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - zenith-net
+
+  worker:
+    build: .
+    command: npm run start:worker
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - API_KEY=${API_KEY}
+      - INTERNAL_API_BASE_URL=http://api:3000/api
+      # Concurrency Controls
+      - CMS_CONCURRENCY=${CMS_CONCURRENCY:-5}
+      - MEDIA_CONCURRENCY=${MEDIA_CONCURRENCY:-1}
+      - EMAIL_CONCURRENCY=${EMAIL_CONCURRENCY:-10}
+      - MONITOR_CONCURRENCY=${MONITOR_CONCURRENCY:-5}
+    depends_on:
+      - redis
+    deploy:
+      mode: replicated
+      replicas: 2 # Horizontal Scaling: Run 2 instances of the worker
+    networks:
+      - zenith-net
+
+  # Optional: The HTTP API Server
+  api:
+    build: .
+    command: npm run start:server
+    ports:
+      - "3000:3000"
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - API_KEY=${API_KEY}
+    depends_on:
+      - redis
+    networks:
+      - zenith-net
+
+volumes:
+  redis_data:
+
+networks:
+  zenith-net:
