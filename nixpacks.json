@@ -1,17 +1,3 @@
 {
-  "providers": ["node"],
-  "phases": {
-    "setup": {
-      "nixPkgs": ["nodejs", "npm"]
-    },
-    "install": {
-      "cmds": ["npm install"]
-    },
-    "build": {
-      "cmds": ["npm run build"]
-    },
-    "start": {
-      "cmds": ["npm run start"]
-    }
-  }
+  "providers": ["node"]
 }
