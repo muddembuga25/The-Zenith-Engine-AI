@@ -1,20 +1,4 @@
 
-/*
- * 🔒 CORE FEATURE: AGENCY PORTAL & AGENT WORKSPACE
- * STATUS: PROTECTED / FROZEN
- * -----------------------------------------------------------------------------
- * This component represents a critical, high-value feature for the application.
- * It allows Agency-tier users to manage client sites and run autonomous agents.
- * 
- * CRITICAL FUNCTIONALITY PRESERVATION:
- * 1. Independent Site State (AGENCY_SITES_KEY): Must remain isolated from user state.
- * 2. Automatic Promo Site Initialization: Parses FeaturesMarkdown to auto-configure branding.
- * 3. Agency Agent Dashboard: The Log/Idea split view is essential for user trust.
- * 4. Automation Readiness Indicator: The visual health-check system in the header.
- * 
- * DO NOT MODIFY THE STRUCTURE OR LOGIC OF THIS FILE WITHOUT EXPLICIT AUTHORIZATION.
- */
-
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 // FIX: Added ApiKeys to the import from ../types
@@ -651,8 +635,8 @@ export const AgencyPortalTab: React.FC<AgencyPortalTabProps> = ({ currentUser })
     
     const onRefreshAnalytics = async () => { toast.addToast('Not implemented in Agency Portal', 'info'); };
     const onRefreshClarityData = async () => { toast.addToast('Not implemented in Agency Portal', 'info'); };
-    const handleConnectSocialMedia = () => { toast.addToast('Not implemented in Agency Portal', 'info'); };
-    const handleVerifySocialMediaConnection = () => { toast.addToast('Not implemented in Agency Portal', 'info'); };
+    const handleConnectSocialMedia = (platform: any, accountId: string) => { toast.addToast('Not implemented in Agency Portal', 'info'); };
+    const handleVerifySocialMediaConnection = (platformId: any, accountId: string, accessToken: string) => { toast.addToast('Not implemented in Agency Portal', 'info'); };
     const handleVerifyCredentialBasedConnection = () => { toast.addToast('Not implemented in Agency Portal', 'info'); };
     const handleVerifyMailchimp = async () => { toast.addToast('Not implemented in Agency Portal', 'info'); };
     const handleVerifyClarity = async () => { toast.addToast('Not implemented in Agency Portal', 'info'); };
@@ -769,7 +753,7 @@ export const AgencyPortalTab: React.FC<AgencyPortalTabProps> = ({ currentUser })
                 {activeTab === 'automation' && <AutomationDashboard site={selectedSite} onSiteUpdate={handleSiteUpdate} onMultipleSiteUpdates={handleMultipleSiteUpdates} setActiveTab={setActiveTab} planAccess={agencyPlanAccess} isAgencyContext={true} />}
                 {activeTab === 'branding' && <BrandingTab site={selectedSite} onSiteUpdate={handleSiteUpdate} onMultipleSiteUpdates={handleMultipleSiteUpdates} logApiUsage={logApiUsage} setError={setError} setActiveTab={setActiveTab} />}
                 {activeTab === 'connections' && <ConnectionsTab site={selectedSite} onSiteUpdate={handleSiteUpdate} onMultipleSiteUpdates={handleMultipleSiteUpdates} isConnectingSocial={isConnectingSocial} setError={setError} onConnect={handleConnectSocialMedia as any} onVerify={handleVerifySocialMediaConnection} onVerifyCredentials={handleVerifyCredentialBasedConnection} setActiveTab={setActiveTab} onVerifyMailchimp={handleVerifyMailchimp} onVerifyClarity={handleVerifyClarity} onVerifySupabase={handleVerifySupabase} onVerifyPaystack={handleVerifyPaystack} onVerifyPayfast={handleVerifyPayfast} onVerifyWise={handleVerifyWise} onVerifyPayoneer={handleVerifyPayoneer} onVerifyStripe={handleVerifyStripe} onVerifyPayPal={handleVerifyPayPal} logApiUsage={logApiUsage} />}
-                {activeTab === 'api-spend' && <ApiSpendDashboard site={selectedSite} sites={sites} onResetAllSitesSpend={() => {}} onSiteUpdate={handleSiteUpdate} currentUser={currentUser} />}
+                {activeTab === 'api-spend' && <ApiSpendDashboard site={selectedSite} sites={sites} onResetAllSitesSpend={() => {}} onSiteUpdate={handleSiteUpdate} currentUser={currentUser} setError={setError} />}
                 {activeTab === 'settings' && <SettingsTab site={selectedSite} onSiteUpdate={handleSiteUpdate} onMultipleSiteUpdates={handleMultipleSiteUpdates} onOpenDeleteDialog={handleOpenDeleteDialog} setActiveTab={setActiveTab} />}
             </div>
         </div>

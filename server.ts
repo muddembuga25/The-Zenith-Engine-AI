@@ -31,7 +31,7 @@ const getSupabase = (authHeader?: string) => {
 
 // --- API ROUTES ---
 
-// 0. Health Check (Critical for Coolify/Docker deployments)
+// 0. Health Check
 app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
@@ -327,8 +327,21 @@ app.all('/api/proxy-request', async (req, res) => {
 });
 
 // --- Serve Frontend ---
-// Use absolute path for Docker reliability
-const distPath = path.join(__dirname, 'dist');
+// Use absolute path for Docker/Production reliability
+// Ensure 'dist' exists; if not, assume we're in root
+let distPath = path.join(__dirname, 'dist');
+
+// Fallback logic for different deployment structures
+import fs from 'fs';
+if (!fs.existsSync(distPath)) {
+    // If server.ts is compiled to /dist/server.js, then ../dist is correct
+    // If running with tsx from root, ./dist is correct
+    // Try current directory dist
+    if (fs.existsSync(path.join((process as any).cwd(), 'dist'))) {
+        distPath = path.join((process as any).cwd(), 'dist');
+    }
+}
+
 app.use(express.static(distPath));
 
 // Handle client-side routing, return all requests to index.html
@@ -339,6 +352,7 @@ app.get('*', (req, res) => {
 // --- Start Server & Scheduler ---
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`Serving static files from: ${distPath}`);
   console.log('Starting Automation Scheduler...');
   setInterval(async () => {
       try { await runScheduler(); } catch(e) { console.error("Scheduler Error:", e); }

@@ -1,7 +1,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { useSite } from '../contexts/SiteContext';
-import { AppStatus, AutomationWorkflow, type BlogPost, type PostHistoryItem, type SocialMediaPost, type StrategicBrief, type Draft, type User } from '../types';
+import { AppStatus, AutomationWorkflow, type BlogPost, type PostHistoryItem, type SocialMediaPost, type StrategicBrief, type Draft, type User, type Site } from '../types';
 import * as aiService from '../services/aiService';
 import { calculateSeoScore } from '../services/seoService';
 import { publishPost } from '../services/wordpressService';
@@ -255,6 +255,17 @@ export const AppRouter: React.FC<AppRouterProps> = ({ activeTab, activeSubTab, s
 
     const handleOpenDeleteDialog = () => { /* Handled in SettingsTab usually, but logic exists in SiteContext */ };
 
+    const verifyAndSave = async (verifier: (c: any) => Promise<{success: boolean, message: string}>, connection: any, field: keyof Site) => {
+        try {
+            const res = await verifier(connection);
+            toast.addToast(res.message, res.success ? 'success' : 'error');
+            updateSite(field, { ...connection, status: res.success ? 'connected' : 'error', statusMessage: res.message });
+        } catch (e: any) {
+            toast.addToast(e.message, 'error');
+            updateSite(field, { ...connection, status: 'error', statusMessage: e.message });
+        }
+    };
+
     // --- Loading / Active View ---
     const isLoading = status > AppStatus.IDLE && status < AppStatus.READY_TO_PUBLISH;
     
@@ -284,7 +295,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({ activeTab, activeSubTab, s
         case 'dashboard':
             return <DashboardTab site={selectedSite} sites={sites} setActiveTab={setActiveTab} onGenerate={generateAndScorePost} onReviewDraft={(id) => { const d = selectedSite.drafts.find(dr => dr.id === id); if(d) { setReviewingDraft(d); setBlogPost(d.blogPost); setStrategicBrief(d.strategicBrief); setStatus(AppStatus.READY_TO_PUBLISH); } }} currentUser={currentUser} />;
         case 'content':
-            return <ContentHubTab site={selectedSite} onSiteUpdate={updateSite} onMultipleSiteUpdates={updateMultipleSiteFields} onGenerateAndScore={generateAndScorePost} onReviewDraft={(id) => { const d = selectedSite.drafts.find(dr => dr.id === id); if(d) { setReviewingDraft(d); setBlogPost(d.blogPost); setStrategicBrief(d.strategicBrief); setStatus(AppStatus.READY_TO_PUBLISH); } }} onDiscardDraft={(id) => updateSite('drafts', selectedSite.drafts.filter(d => d.id !== id))} onViewHistory={setViewingHistoryItem} setActiveTab={setActiveTab} logApiUsage={logApiUsage} initialSubTab={activeSubTab} onRefreshAnalytics={async () => toast.addToast('Analytic refresh triggered', 'info')} onRefreshClarityData={async () => toast.addToast('Clarity refresh triggered', 'info')} onRefreshArticle={onRefreshArticle} />;
+            return <ContentHubTab site={selectedSite} onSiteUpdate={updateSite} onMultipleSiteUpdates={updateMultipleSiteFields} onGenerateAndScore={generateAndScorePost} onReviewDraft={(id) => { const d = selectedSite.drafts.find(dr => dr.id === id); if(d) { setReviewingDraft(d); setBlogPost(d.blogPost); setStrategicBrief(d.strategicBrief); setStatus(AppStatus.READY_TO_PUBLISH); } }} onDiscardDraft={(id) => updateSite('drafts', selectedSite.drafts.filter(d => d.id !== id))} onViewHistory={setViewingHistoryItem} setActiveTab={setActiveTab} logApiUsage={logApiUsage} initialSubTab={activeSubTab} onRefreshAnalytics={async () => toast.addToast('Analytic refresh triggered', 'info')} onRefreshClarityData={async () => toast.addToast('Clarity refresh triggered', 'info')} onRefreshArticle={onRefreshArticle} setError={(e) => toast.addToast(e || 'Error', 'error')} />;
         case 'authority':
             if (!planAccess.canUseAuthority) return <UpgradePlan featureName="The Authority Suite" requiredPlan="Pro" setActiveTab={setActiveTab} />;
             return <AuthorityTab site={selectedSite} onSiteUpdate={updateSite} logApiUsage={logApiUsage} setError={(e) => toast.addToast(e||'Error', 'error')} />;
@@ -297,7 +308,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({ activeTab, activeSubTab, s
         case 'branding':
             return <BrandingTab site={selectedSite} onSiteUpdate={updateSite} onMultipleSiteUpdates={updateMultipleSiteFields} logApiUsage={logApiUsage} setActiveTab={setActiveTab} setError={(e) => toast.addToast(e||'Error', 'error')} />;
         case 'connections':
-            return <ConnectionsTab site={selectedSite} onSiteUpdate={updateSite} onMultipleSiteUpdates={updateMultipleSiteFields} isConnectingSocial={isConnectingSocial} onConnect={handleConnectSocialMedia} onVerify={handleVerifySocialMedia} onVerifyCredentials={handleVerifyCredentials} onVerifyMailchimp={(s) => mailchimpService.verifyMailchimpConnection(s).then(r => { if(r.success) updateSite('mailchimpSettings', {...s, isConnected: true}); toast.addToast(r.message, r.success?'success':'error'); })} onVerifyClarity={(pid) => clarityService.verifyClarityProject(pid).then(r => { if(r.success) updateSite('clarityProjectId', pid); toast.addToast(r.message, r.success?'success':'error'); })} onVerifySupabase={dbService.verifySupabaseConnection} onVerifyPaystack={paystackService.verifyPaystackConnection} onVerifyPayfast={payfastService.verifyPayfastConnection} onVerifyWise={wiseService.verifyWiseConnection} onVerifyPayoneer={payoneerService.verifyPayoneerConnection} onVerifyStripe={stripeService.verifyStripeConnection} onVerifyPayPal={paypalService.verifyPayPalConnection} setActiveTab={setActiveTab} logApiUsage={logApiUsage} setError={(e) => toast.addToast(e||'Error', 'error')} />;
+            return <ConnectionsTab site={selectedSite} onSiteUpdate={updateSite} onMultipleSiteUpdates={updateMultipleSiteFields} isConnectingSocial={isConnectingSocial} setError={(e) => toast.addToast(e || 'Error', 'error')} onConnect={handleConnectSocialMedia} onVerify={handleVerifySocialMedia} onVerifyCredentials={handleVerifyCredentials} onVerifyMailchimp={(s) => mailchimpService.verifyMailchimpConnection(s).then(r => { if(r.success) updateSite('mailchimpSettings', {...s, isConnected: true}); toast.addToast(r.message, r.success?'success':'error'); })} onVerifyClarity={(pid) => clarityService.verifyClarityProject(pid).then(r => { if(r.success) updateSite('clarityProjectId', pid); toast.addToast(r.message, r.success?'success':'error'); })} onVerifySupabase={(c) => verifyAndSave(dbService.verifySupabaseConnection, c, 'supabaseConnection')} onVerifyPaystack={(c) => verifyAndSave(paystackService.verifyPaystackConnection, c, 'paystackConnection')} onVerifyPayfast={(c) => verifyAndSave(payfastService.verifyPayfastConnection, c, 'payfastConnection')} onVerifyWise={(c) => verifyAndSave(wiseService.verifyWiseConnection, c, 'wiseConnection')} onVerifyPayoneer={(c) => verifyAndSave(payoneerService.verifyPayoneerConnection, c, 'payoneerConnection')} onVerifyStripe={(c) => verifyAndSave(stripeService.verifyStripeConnection, c, 'stripeConnection')} onVerifyPayPal={(c) => verifyAndSave(paypalService.verifyPayPalConnection, c, 'payPalConnection')} setActiveTab={setActiveTab} logApiUsage={logApiUsage} />;
         case 'analytics':
             if (!planAccess.canUseAnalytics) return <UpgradePlan featureName="Analytics & Monitoring" requiredPlan="Creator" setActiveTab={setActiveTab} />;
             return <ApiManagementTab site={selectedSite} setActiveTab={setActiveTab} onSiteUpdate={updateSite} logApiUsage={logApiUsage} />;
@@ -306,7 +317,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({ activeTab, activeSubTab, s
         case 'subscription':
             return <SubscriptionPage currentUser={currentUser} onUpdatePlan={onUpdatePlan} />;
         case 'settings':
-            return <SettingsTab site={selectedSite} onSiteUpdate={updateSite} onMultipleSiteUpdates={updateMultipleSiteFields} onOpenDeleteDialog={() => deleteSite(selectedSite.id)} setActiveTab={setActiveTab} />;
+            return <SettingsTab site={selectedSite} onSiteUpdate={updateSite} onMultipleSiteUpdates={updateMultipleSiteFields} onOpenDeleteDialog={handleOpenDeleteDialog} setActiveTab={setActiveTab} />;
         default:
             return <div>Tab not found</div>;
     }
