@@ -1,8 +1,5 @@
 {
-  "name": "The Zenith Engine AI",
+  "name": "Zenith Engine AI",
   "description": "An AI-powered application to generate and publish fully SEO-optimized blog posts directly to your WordPress site. Simply provide a topic, and let the AI handle keyword research, content creation, and image generation.",
-  "requestFramePermissions": [
-    "camera",
-    "microphone"
-  ]
+  "requestFramePermissions": []
 }

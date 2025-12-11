@@ -171,6 +171,9 @@ export const AssistantUI: React.FC<AssistantProps> = ({ site, actions }) => {
     });
 
     useEffect(() => {
+        // Only check devices when the menu is opened to avoid startup permission requests
+        if (!isMenuOpen) return;
+
         const checkCameras = async () => {
             try {
                 const devices = await navigator.mediaDevices.enumerateDevices();
@@ -181,7 +184,7 @@ export const AssistantUI: React.FC<AssistantProps> = ({ site, actions }) => {
             }
         };
         checkCameras();
-    }, []);
+    }, [isMenuOpen]);
 
     const closeMediaDevices = useCallback(() => {
         if (mediaStreamRef.current) {
