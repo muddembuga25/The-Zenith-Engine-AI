@@ -26,9 +26,6 @@ export const BackendSetupWizard: React.FC = () => {
         setError(null);
         setIsLoading(true);
 
-        // Simulation of Root Authentication
-        await new Promise(resolve => setTimeout(resolve, 800));
-
         try {
             const storedRootStr = localStorage.getItem('zenith_root_admin');
             
@@ -76,10 +73,6 @@ export const BackendSetupWizard: React.FC = () => {
             
             if (result.success) {
                 setStep('success');
-                // Persist after a short delay for visual feedback
-                setTimeout(() => {
-                    saveBackendConfig(dbUrl, dbKey);
-                }, 1500);
             } else {
                 throw new Error(result.message);
             }
@@ -88,6 +81,10 @@ export const BackendSetupWizard: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleLaunch = () => {
+        saveBackendConfig(dbUrl, dbKey);
     };
 
     return (
@@ -232,10 +229,15 @@ export const BackendSetupWizard: React.FC = () => {
                             </div>
                             <h3 className="text-xl font-bold text-white mb-2">Connection Established</h3>
                             <p className="text-gray-400 text-sm">
-                                The backend is now online. Rebooting system interface...
+                                The backend is now online. Click below to launch the system.
                             </p>
-                            <div className="mt-8 w-full bg-gray-800 rounded-full h-1 overflow-hidden">
-                                <div className="h-full bg-green-500 w-full animate-pulse origin-left duration-1000" style={{ animationName: 'waveform-bar' }}></div>
+                            <div className="mt-8">
+                                <button 
+                                    onClick={handleLaunch}
+                                    className="w-full bg-green-600 hover:bg-green-500 text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-green-900/20 active:scale-95 flex items-center justify-center gap-2"
+                                >
+                                    Launch Zenith OS
+                                </button>
                             </div>
                         </div>
                     )}

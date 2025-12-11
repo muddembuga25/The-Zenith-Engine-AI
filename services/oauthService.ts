@@ -1,6 +1,7 @@
 
 import type { WhatsAppAccount, TelegramAccount, MetaAsset, Site, MetaAdsAccount, GoogleAdsAccount } from '../types';
 import { storageService } from './storageService';
+import { supabaseUrl, supabaseAnonKey } from './supabaseClient';
 
 const isBrowser = typeof window !== 'undefined';
 const CORS_PROXY_URL = isBrowser ? 'https://cors-anywhere.herokuapp.com/' : '';
@@ -96,7 +97,11 @@ export const exchangeCodeForToken = async (
 
     const response = await fetch(`${API_BASE}/oauth-token`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'x-supabase-url': supabaseUrl,
+            'x-supabase-key': supabaseAnonKey
+        },
         body: JSON.stringify({
             code,
             platform,

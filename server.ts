@@ -21,10 +21,14 @@ app.use(express.json({ limit: '50mb' }));
 app.use(cors());
 
 // --- Middleware & Clients ---
-const getSupabase = (authHeader?: string) => {
+const getSupabase = (req: express.Request) => {
+  const url = (req.headers['x-supabase-url'] as string) || process.env.SUPABASE_URL || '';
+  const key = (req.headers['x-supabase-key'] as string) || process.env.SUPABASE_ANON_KEY || '';
+  const authHeader = req.headers.authorization;
+  
   return createClient(
-    process.env.SUPABASE_URL || '',
-    process.env.SUPABASE_ANON_KEY || '',
+    url,
+    key,
     authHeader ? { global: { headers: { Authorization: authHeader } } } : undefined
   );
 };
@@ -40,8 +44,7 @@ app.get('/health', (req, res) => {
 app.post('/api/oauth-token', async (req, res) => {
   try {
     const { code, platform, siteId, accountId, redirectUri, codeVerifier } = req.body;
-    const authHeader = req.headers.authorization;
-    const supabase = getSupabase(authHeader);
+    const supabase = getSupabase(req);
 
     // Fetch Site Settings
     const { data: siteData, error: siteError } = await supabase
