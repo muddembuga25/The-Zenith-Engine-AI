@@ -19,6 +19,8 @@ const firebaseConfig = {
 try {
   initializeApp(firebaseConfig);
 } catch (e) {
+  // If Firebase is already initialized or config is invalid in dev, 
+  // we catch it here to prevent a full app crash (White Screen of Death).
   console.warn("Firebase initialization skipped or failed:", e);
 }
 
