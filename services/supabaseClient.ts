@@ -2,22 +2,38 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Configuration for the live Supabase backend
-// In production, these must be set in your build environment (e.g., Vercel, Netlify)
-// We check for both REACT_APP_ prefixed variables (Frontend) and standard variables (Backend/Node)
 const envUrl = process.env.REACT_APP_SUPABASE_URL || process.env.SUPABASE_URL;
 const envKey = process.env.REACT_APP_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-const envReadUrl = process.env.SUPABASE_READ_URL; // Optional: URL for Read Replica
+const envReadUrl = process.env.SUPABASE_READ_URL;
 
-// CRITICAL FIX: Prevent crash if variables are missing by using placeholders.
-// The app will load, but network requests will fail until real keys are provided in .env
-const supabaseUrl = envUrl || 'https://placeholder.supabase.co';
-const supabaseAnonKey = envKey || 'placeholder-key';
+// Dynamic Configuration: Check localStorage for client-side overrides
+const localConfigStr = typeof window !== 'undefined' ? localStorage.getItem('zenith_supabase_config') : null;
+const localConfig = localConfigStr ? JSON.parse(localConfigStr) : null;
 
-if (!envUrl || !envKey) {
-  // Only log error if we are not in a build step or similar environment where these might be missing intentionally
-  if (typeof window !== 'undefined') {
-      console.warn("Supabase URL or Anon Key is missing. Using placeholders to prevent crash. App will not function correctly until .env is configured.");
-  }
+// Logic: Env vars > Local Storage > Placeholder
+// We use placeholders to prevent crash if no config is found anywhere.
+export const supabaseUrl = envUrl || localConfig?.url || 'https://placeholder.supabase.co';
+export const supabaseAnonKey = envKey || localConfig?.key || 'placeholder-key';
+
+// Helper to check if we are in "configured" mode or "setup" mode
+export const isBackendConfigured = (): boolean => {
+    return supabaseUrl !== 'https://placeholder.supabase.co' && supabaseAnonKey !== 'placeholder-key';
+};
+
+// Helper to save configuration (Client-side simulation of backend connection)
+export const saveBackendConfig = (url: string, key: string) => {
+    if (typeof window !== 'undefined') {
+        localStorage.setItem('zenith_supabase_config', JSON.stringify({ url, key }));
+        // Reload is usually required to re-initialize top-level consts in other modules
+        window.location.reload();
+    }
+};
+
+export const resetBackendConfig = () => {
+    if (typeof window !== 'undefined') {
+        localStorage.removeItem('zenith_supabase_config');
+        window.location.reload();
+    }
 }
 
 // Primary Client (Write Operations)
@@ -34,19 +50,17 @@ export const supabase = createClient(
 );
 
 // Secondary Client (Read Operations)
-// If SUPABASE_READ_URL is provided (e.g. pointing to a replica), use it.
-// Otherwise, fallback to the primary client to keep the app functional without extra config.
 export const supabaseRead = envReadUrl 
     ? createClient(envReadUrl, supabaseAnonKey, {
         auth: {
-            persistSession: false, // Read client typically doesn't need session persistence in this context
+            persistSession: false,
             autoRefreshToken: false,
             detectSessionInUrl: false
         }
       })
     : supabase;
 
-// Helper to create a client with specific credentials (used for verifying external connections if needed)
+// Helper to create a client with specific credentials
 export const createSupabaseClient = (url: string, key: string) => {
     return createClient(url, key);
 };
