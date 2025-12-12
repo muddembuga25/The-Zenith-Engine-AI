@@ -6,9 +6,13 @@ const envUrl = process.env.REACT_APP_SUPABASE_URL || process.env.SUPABASE_URL;
 const envKey = process.env.REACT_APP_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 const envReadUrl = process.env.SUPABASE_READ_URL;
 
-// Logic: Env vars ONLY. No local storage fallback for production security.
-export const supabaseUrl = envUrl || '';
-export const supabaseAnonKey = envKey || '';
+// Local storage fallback for client-side configuration
+const storedUrl = typeof window !== 'undefined' ? localStorage.getItem('zenith_supabase_url') : null;
+const storedKey = typeof window !== 'undefined' ? localStorage.getItem('zenith_supabase_key') : null;
+
+// Logic: Env vars > Local Storage.
+export const supabaseUrl = envUrl || storedUrl || '';
+export const supabaseAnonKey = envKey || storedKey || '';
 
 // Helper to check if we are in "configured" mode
 export const isBackendConfigured = (): boolean => {
@@ -26,7 +30,7 @@ export const supabase = isBackendConfigured()
           detectSessionInUrl: typeof window !== 'undefined'
       }
     })
-  : null as any; // Allow app to load to show config error screen
+  : null as any; // Allow app to load to show config wizard if null
 
 // Secondary Client (Read Operations)
 export const supabaseRead = (isBackendConfigured() && envReadUrl)
@@ -45,7 +49,10 @@ export const createSupabaseClient = (url: string, key: string) => {
 };
 
 export const saveBackendConfig = (url: string, key: string) => {
-    // This functionality is deprecated in favor of Environment Variables.
-    // Kept to prevent build errors in legacy components like BackendSetupWizard.
-    console.warn("Attempted to save backend config via UI. Please set SUPABASE_URL and SUPABASE_ANON_KEY environment variables.");
+    if (typeof window !== 'undefined') {
+        localStorage.setItem('zenith_supabase_url', url);
+        localStorage.setItem('zenith_supabase_key', key);
+        // Reload to re-initialize client constants
+        window.location.reload();
+    }
 };

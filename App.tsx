@@ -63,6 +63,7 @@ import { isBackendConfigured } from './services/supabaseClient';
 import { Layout } from './components/Layout';
 import { SiteProvider } from './contexts/SiteContext';
 import { AppRouter } from './components/AppRouter';
+import { BackendSetupWizard } from './components/BackendSetupWizard';
 
 const providerDisplayNames: Record<AiProvider, string> = {
   [AiProvider.GOOGLE]: 'Google',
@@ -124,7 +125,11 @@ export const App: React.FC = () => {
             setAuthLoading(false);
         }
     };
-    initAuth();
+    if (isBackendConfigured()) {
+        initAuth();
+    } else {
+        setAuthLoading(false);
+    }
   }, []);
 
   const handleSignOut = useCallback(() => {
@@ -213,15 +218,7 @@ export const App: React.FC = () => {
   }, [currentUser]);
 
   if (!isBackendConfigured()) {
-      return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-950 text-white p-4 text-center">
-            <ExclamationTriangleIcon className="h-16 w-16 text-red-500 mb-4" />
-            <h1 className="text-3xl font-bold mb-2">Configuration Missing</h1>
-            <p className="text-gray-400 max-w-md">
-                The application backend is not configured. Please set the <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> environment variables on the server.
-            </p>
-        </div>
-      );
+      return <BackendSetupWizard />;
   }
 
   if (authLoading) {
