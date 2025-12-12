@@ -130,7 +130,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({ site, blogPost, se
                 <header className="p-4 md:p-0 mb-8 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                     <div>
                         <h1 className="text-2xl md:text-3xl font-extrabold text-main">Editing Mode</h1>
-                        <p className="text-brand-primary mt-1">Make your changes and save to see the updated preview and SEO score.</p>
+                        <p className="text-brand-primary mt-1">Make your changes and save to see the updated preview and GEO score.</p>
                     </div>
                      <div className="flex space-x-4">
                         <button onClick={handleDiscardChanges} className="btn btn-secondary flex items-center gap-2"><XIcon className="h-5 w-5"/> Discard Changes</button>
@@ -189,7 +189,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({ site, blogPost, se
             <header className="p-4 md:p-0 mb-8 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div className="flex-1 min-w-0">
                     <h1 className="text-2xl md:text-3xl font-extrabold text-main truncate" title={blogPost.title}>{blogPost.title}</h1>
-                    <p className="text-brand-primary mt-1">{originalArticleForDiff ? "Your refreshed article is ready for review." : "Your SEO-optimized article is ready."}</p>
+                    <p className="text-brand-primary mt-1">{originalArticleForDiff ? "Your refreshed article is ready for review." : "Your GEO-optimized article is ready."}</p>
                 </div>
                 <div className="flex space-x-2 sm:space-x-4 w-full sm:w-auto flex-shrink-0">
                     <button onClick={onCancel} className="flex-1 sm:flex-none btn btn-secondary"> Cancel </button>
@@ -226,7 +226,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({ site, blogPost, se
                         {blogPost.wasSeoAutoCorrected && (
                             <div className="mt-4 flex items-center justify-center gap-2 p-2 bg-green-900/30 border border-green-500/30 rounded-lg text-xs font-semibold text-green-300 animate-fade-in">
                                 <SparklesIcon className="h-4 w-4" />
-                                <span>AI SEO Auto-Corrected</span>
+                                <span>AI GEO Auto-Corrected</span>
                             </div>
                         )}
                     </div>

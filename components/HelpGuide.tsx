@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { XIcon, DocumentTextIcon, ClockIcon, WordPressIcon, SparklesIcon, PenIcon, LinkIcon, RssIcon, VideoCameraIcon, GoogleIcon, ShareIcon, MailIcon, ChartBarIcon, ScaleIcon, KeyIcon, ChevronDownIcon, MagnifyingGlassIcon } from './Icons';
 
@@ -41,15 +42,15 @@ const guideContent = [
         id: 'getting-started',
         title: '🚀 Getting Started',
         icon: SparklesIcon,
-        keywords: 'connect wordpress add idea generate article publish seo',
+        keywords: 'connect wordpress add idea generate article publish geo seo',
         component: () => (
             <Section title="Step-by-Step Guide" id="getting-started-section">
-                <p>Welcome to Zenith Engine AI! Follow these steps to go from a simple idea to a fully SEO-optimized, published blog post in minutes.</p>
+                <p>Welcome to Zenith Engine AI! Follow these steps to go from a simple idea to a fully GEO-optimized (Generative Engine Optimization), published blog post in minutes.</p>
                 <ol>
                     <li><strong>Connect Your Site:</strong> Go to the <strong className="text-blue-300">Settings</strong> tab. Enter your WordPress URL, Username, and create an Application Password from your WP admin dashboard. Click Verify to confirm the connection.</li>
                     <li><strong>Define Your Brand:</strong> Navigate to the <strong className="text-blue-300">Branding & Context</strong> tab. Fill out the Brand Guideline. This is crucial for teaching the AI your unique voice, tone, and audience.</li>
                     <li><strong>Add Content Ideas:</strong> Go to the <strong className="text-blue-300">Content Hub</strong>. In the "Blog Posts" sub-tab, add your topics to the Keyword List, one per line.</li>
-                    <li><strong>Generate Your Article:</strong> Click the "Generate Next Post" button. The AI will perform keyword research, create an SEO brief, write the article, and generate an image.</li>
+                    <li><strong>Generate Your Article:</strong> Click the "Generate Next Post" button. The AI will perform entity research, create a GEO brief, write the article, and generate an image.</li>
                     <li><strong>Review and Publish:</strong> Once complete, a preview of the article appears. You can edit it if needed, then click "Publish" to send it directly to WordPress.</li>
                 </ol>
             </Section>

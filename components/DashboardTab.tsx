@@ -129,9 +129,9 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({ site, sites, setActi
                         <SparklesIcon className="h-8 w-8" />
                     </div>
                     <div className="flex-1">
-                        <h3 className="text-lg font-bold text-white">Ready to Generate</h3>
+                        <h3 className="text-lg font-bold text-white">Ready to Optimize</h3>
                         <p className="text-sm text-text-secondary mt-1 mb-4">Topic: <span className="text-white font-medium">"{nextKeyword}"</span></p>
-                        <button onClick={handleGenerate} className="btn btn-primary text-sm px-4 py-2">Generate Now</button>
+                        <button onClick={handleGenerate} className="btn btn-primary text-sm px-4 py-2">Start Optimization</button>
                     </div>
                 </div>
             </div>

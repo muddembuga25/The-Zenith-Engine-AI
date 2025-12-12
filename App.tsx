@@ -1,5 +1,4 @@
 
-
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { AppStatus, AiProvider, SubscriptionPlan, AutomationWorkflow } from './types';
 import { AVAILABLE_MODELS } from './types';
@@ -29,14 +28,13 @@ import * as socialMediaService from './services/socialMediaService';
 import { getEnabledDestinations } from './services/socialMediaService';
 import * as mailchimpService from './services/mailchimpService';
 import { storageService } from './services/storageService';
-import { isBackendConfigured } from './services/supabaseClient';
 import * as authService from './services/authService';
 import { useToast } from './hooks/useToast';
 import { 
     LogoIcon, CheckCircleIcon, ExclamationTriangleIcon, Cog6ToothIcon, ClockIcon, MenuIcon, XIcon, PenIcon, HomeIcon, 
     ScaleIcon, SparklesIcon, PhotoIcon, VideoCameraIcon, DocumentTextIcon, ShareIcon, LightbulbIcon, LinkIcon, 
     ChartBarIcon, QuestionMarkCircleIcon, SignOutIcon, UserIcon, CreditCardIcon, LockClosedIcon, WordPressIcon, 
-    KeyIcon, BuildingOffice2Icon, SunIcon, MoonIcon
+    KeyIcon, BuildingOffice2Icon 
 } from './components/Icons';
 import { HistoryDetailViewer } from './components/HistoryDetailViewer';
 import { AutomationDashboard } from './components/AutomationDashboard';
@@ -60,8 +58,9 @@ import { UpgradePlan } from './components/UpgradePlan';
 import { ProfileModal } from './components/ProfileModal';
 import { AdvertisingTab } from './components/AdvertisingTab';
 import { OnboardingWizard } from './components/OnboardingWizard';
-import { BackendSetupWizard } from './components/BackendSetupWizard';
 import { checkAutomationReadiness } from './utils/automationReadiness';
+import { isBackendConfigured } from './services/supabaseClient';
+import { Layout } from './components/Layout';
 
 
 const providerDisplayNames: Record<AiProvider, string> = {
@@ -152,12 +151,12 @@ const ActiveComponent: React.FC<ActiveComponentProps> = ({
     if (isLoading) {
       const messages = [
         "Discovering high-intent keywords...",
-        "Analyzing SERPs for competitive advantages...",
-        "Crafting a unique angle for your post...",
-        "Drafting compelling, SEO-optimized content...",
+        "Analyzing GEO landscape...",
+        "Crafting a unique content angle...",
+        "Drafting authoritative content...",
         "Generating a unique featured image...",
-        "Performing Self-Correction SEO Loop...",
-        "Finalizing SEO metadata and schema...",
+        "Performing Self-Correction GEO Loop...",
+        "Finalizing schema markup and metadata...",
       ];
       const messageIndex = Math.min(status - 1, messages.length - 1);
 
@@ -311,6 +310,110 @@ export const App: React.FC = () => {
   const [isTrialBannerVisible, setIsTrialBannerVisible] = useState(true);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
+  const isLoading = status > AppStatus.IDLE && status < AppStatus.READY_TO_PUBLISH;
+
+  const selectedSite = sites.find(s => s.id === selectedSiteId);
+
+  // --------------------------------------------------------------------------------
+  // 1. Core Functions Declarations (Must be before usage)
+  // --------------------------------------------------------------------------------
+
+  // resetGeneration: Clears the current generation state
+  const resetGeneration = useCallback(() => {
+    setStatus(AppStatus.IDLE);
+    setBlogPost(null);
+    setStrategicBrief(null);
+    setPublishedPostUrl(null);
+    setCurrentTopic('');
+    setSeoScore(null);
+    setStatusMessage('');
+    setLastGeneratedSocialPosts(null);
+    setOriginalArticleForDiff(null);
+    setRefreshedArticleForDiff(null);
+  }, []);
+
+  // handleSiteUpdate: Updates a single field on the selected site
+  const handleSiteUpdate = useCallback((field: keyof Site, value: any) => {
+      setSites(prevSites => prevSites.map(s => s.id === selectedSiteId ? { ...s, [field]: value } : s));
+  }, [selectedSiteId]);
+
+  // handleMultipleSiteUpdates: Updates multiple fields on the selected site
+  const handleMultipleSiteUpdates = useCallback((updates: Partial<Site>) => {
+      setSites(prevSites => prevSites.map(s => s.id === selectedSiteId ? { ...s, ...updates } : s));
+  }, [selectedSiteId]);
+
+  // logApiUsage: Tracks API costs
+  const logApiUsage = useCallback((provider: keyof ApiKeys, cost: number) => {
+      if (!selectedSiteId) return;
+      setSites(prevSites => prevSites.map(s => s.id === selectedSiteId ? { 
+          ...s, 
+          apiUsage: { ...(s.apiUsage || {}), [provider]: (s.apiUsage?.[provider] || 0) + cost } 
+      } : s));
+  }, [selectedSiteId]);
+
+  const handleResetAllSitesSpend = useCallback(() => {
+      setSites(prevSites => prevSites.map(s => ({ ...s, apiUsage: {} })));
+  }, []);
+
+  const handleOpenDeleteDialog = useCallback(() => {
+      setIsDeleteDialogOpen(true);
+      setDeleteConfirmationInput('');
+  }, []);
+
+  const handleAddNewSite = useCallback(() => {
+      const defaultTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+      const newSite: Site = {
+          id: crypto.randomUUID(), name: `New Site ${sites.length + 1}`, wordpressUrl: '', wordpressUsername: '', applicationPassword: '',
+          brandGuideline: '', keywordList: '', brandLogoLight: '', brandLogoDark: '', brandColors: '', brandFonts: '', characterReferences: [], promoLink1: '', promoLink2: '',
+          googleSheetSources: [], rssSources: [], videoSources: [], references: [], monitoredBacklinks: [], authorName: '', authorId: undefined, availableAuthors: [], availableCategories: [], history: [], monthlyGenerationsCount: 0,
+          isAutomationEnabled: false, automationTrigger: 'daily', automationDailyTime: '09:00', automationTimezone: defaultTimezone, lastAutoPilotRun: undefined, recurringSchedules: [],
+          isAutoPublishEnabled: true, drafts: [], dailyGenerationSource: 'keyword', scheduleGenerationSource: 'keyword', isInPostImagesEnabled: false, numberOfInPostImages: 3,
+          socialMediaSettings: { twitter: [], facebook: [], linkedin: [], instagram: [], pinterest: [], whatsapp: [], youtube: [], tiktok: [], telegram: [], snapchat: [], meta: [], meta_ads: [], google_ads: [] },
+          mailchimpSettings: { apiKey: '', serverPrefix: '', defaultListId: '', isConnected: false }, googleAnalyticsSettings: { isConnected: false }, clarityProjectId: '',
+          supabaseConnection: { url: '', anonKey: '', status: 'disconnected' }, paystackConnection: { publicKey: '', secretKey: '', status: 'disconnected' }, payfastConnection: { merchantId: '', merchantKey: '', passphrase: '', status: 'disconnected' }, wiseConnection: { apiKey: '', status: 'disconnected' },
+          payoneerConnection: { partnerId: '', programId: '', apiKey: '', status: 'disconnected' }, stripeConnection: { publicKey: '', secretKey: '', status: 'disconnected' }, payPalConnection: { clientId: '', clientSecret: '', status: 'disconnected' },
+          modelConfig: { textProvider: AiProvider.GOOGLE, textModel: AVAILABLE_MODELS.GOOGLE.text[0], imageProvider: AiProvider.GOOGLE, imageModel: AVAILABLE_MODELS.GOOGLE.image[0], videoProvider: AiProvider.GOOGLE, videoModel: AVAILABLE_MODELS.GOOGLE.video[0] },
+          apiKeys: { google: '', openAI: '', anthropic: '', openRouter: '', xai: '', replicate: '', openArt: '', dataforseo: '' },
+          apiUsage: {}, fetchedModels: {}, isAssistantEnabled: true, isVoiceControlEnabled: true, isVideoControlEnabled: true, isTextControlEnabled: true,
+          isSocialGraphicAutomationEnabled: false, socialGraphicAutomationTrigger: 'daily', socialGraphicDailyTime: '14:00', lastSocialGraphicAutoPilotRun: undefined, socialGraphicRecurringSchedules: [], socialGraphicGenerationSource: 'keyword',
+          isSocialVideoAutomationEnabled: false, socialVideoAutomationTrigger: 'daily', socialVideoDailyTime: '18:00', lastSocialVideoAutoPilotRun: undefined, socialVideoRecurringSchedules: [], socialVideoGenerationSource: 'keyword',
+          isEmailMarketingAutomationEnabled: false, emailMarketingAutomationTrigger: 'daily', emailMarketingDailyTime: '10:00', lastEmailMarketingAutoPilotRun: undefined, emailMarketingRecurringSchedules: [], emailMarketingGenerationSource: 'newly_published_post',
+          seoDataProvider: 'google_search', isLocalSeoEnabled: false, localSeoServiceArea: '', localSeoBusinessName: '', localSeoPhoneNumber: '',
+          isAgencyAgentEnabled: false, agencyAgentLogs: [], agentScheduledPosts: [], lastAgentRun: undefined,
+          liveBroadcastAutomation: { isEnabled: false, sourceType: 'meta', facebookPageId: '', facebookPageUrl: '', youtubeChannelUrl: '', tiktokProfileUrl: '', xProfileUrl: '', scheduleType: 'monitor', broadcastDay: 0, broadcastStartTime: '10:00', broadcastEndTime: '12:00', dailyPostTimes: ['09:00', '17:00'], status: 'idle', currentWeekClips: [], youtubeSourceMethod: 'url', tiktokSourceMethod: 'url', xSourceMethod: 'url' },
+      };
+      setSites(prev => [...prev, newSite]);
+      setSelectedSiteId(newSite.id);
+      setIsOnboarding(false);
+  }, [sites.length]);
+
+  const setActiveTab = (tab: string, subTab: string | null = null) => {
+      setActiveTabState(tab);
+      setActiveSubTab(subTab);
+      if (!subTab) {
+          setActiveSubTab(null);
+      }
+      setIsSidebarOpen(false);
+  };
+
+  const handleReviewDraft = useCallback((draftId: string) => {
+      if (!selectedSite) return;
+      const draft = selectedSite.drafts.find(d => d.id === draftId);
+      if (draft) {
+          setReviewingDraft(draft);
+          setBlogPost(draft.blogPost);
+          setStrategicBrief(draft.strategicBrief);
+          setStatus(AppStatus.READY_TO_PUBLISH);
+          setActiveTab('content', 'blog'); 
+      }
+  }, [selectedSite]);
+
+  const onDiscardDraft = useCallback((draftId: string) => {
+      if (window.confirm("Are you sure you want to discard this draft? This cannot be undone.")) {
+          handleSiteUpdate('drafts', selectedSite?.drafts.filter(d => d.id !== draftId) || []);
+      }
+  }, [selectedSite, handleSiteUpdate]);
+
   // Theme initialization
   useEffect(() => {
     const storedTheme = localStorage.getItem('zenith-theme') as 'dark' | 'light' | null;
@@ -327,18 +430,6 @@ export const App: React.FC = () => {
     if (newTheme === 'light') document.documentElement.classList.add('light');
     else document.documentElement.classList.remove('light');
   };
-
-  const setActiveTab = (tab: string, subTab: string | null = null) => {
-      setActiveTabState(tab);
-      setActiveSubTab(subTab);
-      if (!subTab) {
-          setActiveSubTab(null);
-      }
-      setIsSidebarOpen(false);
-  };
-
-  const selectedSite = sites.find(s => s.id === selectedSiteId);
-  const isLoading = status > AppStatus.IDLE && status < AppStatus.READY_TO_PUBLISH;
 
   const automationReadiness = useMemo(() => {
     if (!selectedSite) return { blog: false, socialGraphic: false, socialVideo: false, email: false, liveProduction: false };
@@ -442,13 +533,11 @@ export const App: React.FC = () => {
 
       if (savedSites) {
           finalSites = savedSites.map((site: any): Site => {
-              
+              // ... Migration logic ...
               const migratedModelConfig = { ...defaultModelConfig, ...(site.modelConfig || {}) };
-              
               if (!site.apiKeys || !('dataforseo' in (site.apiKeys || {}))) {
                 const oldConfig = site.modelConfig || {};
                 const newApiKeys: ApiKeys = { ...defaultApiKeys, ...(site.apiKeys || {}) };
-
                 if (oldConfig.apiKey) {
                     switch (oldConfig.provider) {
                         case AiProvider.OPENAI: newApiKeys.openAI = oldConfig.apiKey; break;
@@ -456,103 +545,57 @@ export const App: React.FC = () => {
                         case AiProvider.OPENROUTER: newApiKeys.openRouter = oldConfig.apiKey; break;
                     }
                 }
-                
                 migratedModelConfig.textProvider = oldConfig.provider || AiProvider.GOOGLE;
                 migratedModelConfig.textModel = oldConfig.textModel || defaultModelConfig.textModel;
                 migratedModelConfig.imageProvider = oldConfig.provider || AiProvider.GOOGLE;
                 migratedModelConfig.imageModel = oldConfig.imageModel || defaultModelConfig.imageModel;
-
                 if (migratedModelConfig.imageProvider === AiProvider.ANTHROPIC || migratedModelConfig.imageProvider === AiProvider.XAI) {
                     migratedModelConfig.imageProvider = AiProvider.GOOGLE;
                     migratedModelConfig.imageModel = defaultModelConfig.imageModel;
                 }
-                
                 site.apiKeys = newApiKeys;
               }
-
               const generationSource = site.generationSource || 'keyword';
               let migratedSocialSettings = { ...defaultSocialSettings, ...(site.socialMediaSettings || {}) };
-
               let needsMigration = false;
               for (const platform of socialPlatforms) {
                   if (platform !== 'whatsapp' && platform !== 'telegram' && platform !== 'meta' && platform !== 'meta_ads' && platform !== 'google_ads' && migratedSocialSettings[platform] && !Array.isArray(migratedSocialSettings[platform])) {
-                      needsMigration = true;
-                      break;
+                      needsMigration = true; break;
                   }
-                  if (!migratedSocialSettings[platform]) {
-                    migratedSocialSettings[platform] = [];
-                  }
+                  if (!migratedSocialSettings[platform]) { migratedSocialSettings[platform] = []; }
               }
-
               if(needsMigration) {
                   const newSocialSettings: any = { ...defaultSocialSettings };
                   for (const platform of socialPlatforms) {
-                       if (platform === 'whatsapp' || platform === 'telegram' || platform === 'meta' || platform === 'meta_ads' || platform === 'google_ads') {
-                            newSocialSettings[platform] = migratedSocialSettings[platform] || [];
-                            continue;
-                       };
+                       if (platform === 'whatsapp' || platform === 'telegram' || platform === 'meta' || platform === 'meta_ads' || platform === 'google_ads') { newSocialSettings[platform] = migratedSocialSettings[platform] || []; continue; };
                       const platformSetting = migratedSocialSettings[platform];
                        if (platformSetting && typeof platformSetting === 'object' && !Array.isArray(platformSetting)) {
-                            newSocialSettings[platform] = [{
-                                id: crypto.randomUUID(),
-                                name: `${platform.charAt(0).toUpperCase() + platform.slice(1)} Account`,
-                                isAutomationEnabled: platformSetting.isAutomationEnabled ?? false,
-                                isConnected: platformSetting.isConnected ?? false,
-                                accessToken: platformSetting.accessToken,
-                                clientId: platformSetting.clientId,
-                                clientSecret: platformSetting.clientSecret,
-                            }];
-                       } else {
-                            newSocialSettings[platform] = platformSetting || [];
-                       }
+                            newSocialSettings[platform] = [{ id: crypto.randomUUID(), name: `${platform.charAt(0).toUpperCase() + platform.slice(1)} Account`, isAutomationEnabled: platformSetting.isAutomationEnabled ?? false, isConnected: platformSetting.isConnected ?? false, accessToken: platformSetting.accessToken, clientId: platformSetting.clientId, clientSecret: platformSetting.clientSecret, }];
+                       } else { newSocialSettings[platform] = platformSetting || []; }
                   }
                   migratedSocialSettings = newSocialSettings;
               }
-
-              // Add status and destinationType to existing accounts
               for (const platform of socialPlatforms) {
                   if (migratedSocialSettings[platform]) {
-                    migratedSocialSettings[platform] = (migratedSocialSettings[platform] as any[]).map((acc: any) => ({
-                      ...acc,
-                      status: acc.status || (acc.isConnected ? 'connected' : 'disconnected'),
-                      destinationType: acc.destinationType || (platform === 'facebook' ? 'page' : 'profile'),
-                    }));
+                    migratedSocialSettings[platform] = (migratedSocialSettings[platform] as any[]).map((acc: any) => ({ ...acc, status: acc.status || (acc.isConnected ? 'connected' : 'disconnected'), destinationType: acc.destinationType || (platform === 'facebook' ? 'page' : 'profile'), }));
                   }
               }
-
               let migratedHistory = site.history || [];
               migratedHistory = migratedHistory.map((item: any) => {
                   let newItem = { ...item };
-                  if (newItem.type === 'Social Graphic' && newItem.imageUrl && !newItem.socialGraphics) {
-                      newItem.socialGraphics = {
-                          custom: { imageUrl: newItem.imageUrl, caption: newItem.caption || '' }
-                      };
-                      delete newItem.imageUrl;
-                      delete newItem.caption;
-                  }
+                  if (newItem.type === 'Social Graphic' && newItem.imageUrl && !newItem.socialGraphics) { newItem.socialGraphics = { custom: { imageUrl: newItem.imageUrl, caption: newItem.caption || '' } }; delete newItem.imageUrl; delete newItem.caption; }
                   return newItem;
               });
-
               const liveBroadcastData = site.liveBroadcastAutomation || (site as any).sundayServiceAutomation || {};
               const migratedLiveBroadcast: LiveBroadcastAutomation = { ...defaultLiveBroadcast, ...liveBroadcastData };
-              if ((liveBroadcastData as any).sourceType === 'url') {
-                  migratedLiveBroadcast.sourceType = 'facebook_url';
-              }
-              // Handle URL renames for Live Production
+              if ((liveBroadcastData as any).sourceType === 'url') { migratedLiveBroadcast.sourceType = 'facebook_url'; }
               migratedLiveBroadcast.facebookPageUrl = migratedLiveBroadcast.facebookPageUrl || (migratedLiveBroadcast as any).facebookLiveUrl || '';
               migratedLiveBroadcast.youtubeChannelUrl = migratedLiveBroadcast.youtubeChannelUrl || (migratedLiveBroadcast as any).youtubeLiveUrl || '';
               migratedLiveBroadcast.tiktokProfileUrl = migratedLiveBroadcast.tiktokProfileUrl || (migratedLiveBroadcast as any).tiktokLiveUrl || '';
               migratedLiveBroadcast.xProfileUrl = migratedLiveBroadcast.xProfileUrl || (migratedLiveBroadcast as any).xLiveUrl || (migratedLiveBroadcast as any).xComLiveUrl || '';
-
-              if (!migratedLiveBroadcast.dailyPostTimes || migratedLiveBroadcast.dailyPostTimes.length === 0) {
-                  migratedLiveBroadcast.dailyPostTimes = ['09:00', '17:00'];
-              }
-              if (migratedLiveBroadcast.currentWeekClips?.some((c: any) => c.scheduledTime === 'AM' || c.scheduledTime === 'PM')) {
-                  migratedLiveBroadcast.currentWeekClips = [];
-              }
-              if (typeof migratedLiveBroadcast.lastRunTimestamp === 'undefined') {
-                  migratedLiveBroadcast.lastRunTimestamp = 0;
-              }
+              if (!migratedLiveBroadcast.dailyPostTimes || migratedLiveBroadcast.dailyPostTimes.length === 0) { migratedLiveBroadcast.dailyPostTimes = ['09:00', '17:00']; }
+              if (migratedLiveBroadcast.currentWeekClips?.some((c: any) => c.scheduledTime === 'AM' || c.scheduledTime === 'PM')) { migratedLiveBroadcast.currentWeekClips = []; }
+              if (typeof migratedLiveBroadcast.lastRunTimestamp === 'undefined') { migratedLiveBroadcast.lastRunTimestamp = 0; }
               migratedLiveBroadcast.youtubeSourceMethod = migratedLiveBroadcast.youtubeSourceMethod || 'url';
               migratedLiveBroadcast.tiktokSourceMethod = migratedLiveBroadcast.tiktokSourceMethod || 'url';
               migratedLiveBroadcast.xSourceMethod = migratedLiveBroadcast.xSourceMethod || 'url';
@@ -560,159 +603,36 @@ export const App: React.FC = () => {
               migratedLiveBroadcast.tiktokAccountId = migratedLiveBroadcast.tiktokAccountId || '';
               migratedLiveBroadcast.xAccountId = migratedLiveBroadcast.xAccountId || '';
 
-
               let newSite: Site = { 
-                ...site, 
-                brandGuideline: site.brandGuideline || '',
-                brandLogoLight: site.brandLogoLight || (site as any).brandLogo || '',
-                brandLogoDark: site.brandLogoDark || '',
-                brandColors: site.brandColors || '',
-                brandFonts: site.brandFonts || '',
-                characterReferences: site.characterReferences || [],
-                authorName: site.authorName || site.wordpressUsername || 'Admin',
-                authorId: site.authorId,
-                availableAuthors: site.availableAuthors || [],
-                availableCategories: site.availableCategories || [],
-                isStrictCategoryMatching: site.isStrictCategoryMatching ?? false,
-                scheduleGenerationSource: site.scheduleGenerationSource || generationSource,
-                rssSources: site.rssSources || [],
-                googleSheetSources: site.googleSheetSources || [],
-                recurringSchedules: site.recurringSchedules || [],
-                history: migratedHistory,
-                monthlyGenerationsCount: site.monthlyGenerationsCount || 0,
-                videoSources: site.videoSources || [],
-                references: site.references || [],
-                monitoredBacklinks: site.monitoredBacklinks || [],
-                isAutomationEnabled: site.isAutomationEnabled ?? false,
-                isAutoPublishEnabled: site.isAutoPublishEnabled ?? true,
-                drafts: site.drafts || [],
-                lastAutoPilotRun: site.lastAutoPilotRun, 
-                isInPostImagesEnabled: site.isInPostImagesEnabled ?? false,
-                numberOfInPostImages: site.numberOfInPostImages ?? 3,
-                socialMediaSettings: migratedSocialSettings,
-                mailchimpSettings: site.mailchimpSettings || defaultMailchimpSettings,
-                googleAnalyticsSettings: site.googleAnalyticsSettings || defaultAnalyticsSettings,
-                clarityProjectId: site.clarityProjectId || '',
-                supabaseConnection: site.supabaseConnection || defaultSupabaseConnection,
-                paystackConnection: site.paystackConnection || defaultPaystackConnection,
-                payfastConnection: site.payfastConnection || defaultPayfastConnection,
-                wiseConnection: site.wiseConnection || defaultWiseConnection,
-                payoneerConnection: site.payoneerConnection || defaultPayoneerConnection,
-                stripeConnection: site.stripeConnection || defaultStripeConnection,
-                payPalConnection: site.payPalConnection || defaultPayPalConnection,
-                activePaymentGateway: site.activePaymentGateway,
-                modelConfig: migratedModelConfig,
-                apiKeys: site.apiKeys || defaultApiKeys,
-                apiUsage: site.apiUsage || defaultApiUsage,
-                fetchedModels: site.fetchedModels || {},
-                isAssistantEnabled: site.isAssistantEnabled ?? true,
-                isVoiceControlEnabled: site.isVoiceControlEnabled ?? true,
-                isVideoControlEnabled: site.isVideoControlEnabled ?? true,
-                isTextControlEnabled: site.isTextControlEnabled ?? true,
-                // Automation - time based
-                automationTrigger: site.automationTrigger === 'interval' ? 'daily' : (site.automationTrigger || 'daily'),
-                automationDailyTime: site.automationDailyTime || '09:00',
-                automationTimezone: site.automationTimezone || defaultTimezone,
-                dailyGenerationSource: site.dailyGenerationSource || site.intervalGenerationSource || generationSource,
-                // Social Graphics
-                isSocialGraphicAutomationEnabled: site.isSocialGraphicAutomationEnabled ?? false,
-                isSocialGraphicAutoPublishEnabled: site.isSocialGraphicAutoPublishEnabled ?? true,
-                socialGraphicAutomationTrigger: site.socialGraphicAutomationTrigger === 'interval' ? 'daily' : (site.socialGraphicAutomationTrigger || 'daily'),
-                socialGraphicDailyTime: site.socialGraphicDailyTime || '14:00',
-                lastSocialGraphicAutoPilotRun: site.lastSocialGraphicAutoPilotRun,
-                socialGraphicRecurringSchedules: site.socialGraphicRecurringSchedules || [],
-                socialGraphicGenerationSource: site.socialGraphicGenerationSource || 'keyword',
-                // Social Videos
-                isSocialVideoAutomationEnabled: site.isSocialVideoAutomationEnabled ?? false,
-                isSocialVideoAutoPublishEnabled: site.isSocialVideoAutoPublishEnabled ?? true,
-                socialVideoAutomationTrigger: site.socialVideoAutomationTrigger === 'interval' ? 'daily' : (site.socialVideoAutomationTrigger || 'daily'),
-                socialVideoDailyTime: site.socialVideoDailyTime || '18:00',
-                lastSocialVideoAutoPilotRun: site.lastSocialVideoAutoPilotRun,
-                socialVideoRecurringSchedules: site.socialVideoRecurringSchedules || [],
-                socialVideoGenerationSource: site.socialVideoGenerationSource || 'keyword',
-                // Email Marketing
-                isEmailMarketingAutomationEnabled: site.isEmailMarketingAutomationEnabled ?? false,
-                emailMarketingAutomationTrigger: site.emailMarketingAutomationTrigger || 'daily',
-                emailMarketingDailyTime: site.emailMarketingDailyTime || '10:00',
-                lastEmailMarketingAutoPilotRun: site.lastEmailMarketingAutoPilotRun,
-                emailMarketingRecurringSchedules: site.emailMarketingRecurringSchedules || [],
-                emailMarketingGenerationSource: site.emailMarketingGenerationSource || 'newly_published_post',
-                // SEO & Geo-targeting
-                seoDataProvider: site.seoDataProvider || 'google_search',
-                isLocalSeoEnabled: site.isLocalSeoEnabled ?? false,
-                localSeoServiceArea: site.localSeoServiceArea || '',
-                localSeoBusinessName: site.localSeoBusinessName || '',
-                localSeoPhoneNumber: site.localSeoPhoneNumber || '',
-                // Agency Features
-                isAgencyAgentEnabled: site.isAgencyAgentEnabled ?? false,
-                agentCheckFrequencyHours: site.agentCheckFrequencyHours || 24,
-                agentActionOnDiscovery: site.agentActionOnDiscovery || 'addToReviewList',
-                agencyAgentLogs: site.agencyAgentLogs || [],
-                agentScheduledPosts: site.agentScheduledPosts || [],
-                lastAgentRun: site.lastAgentRun,
-                liveBroadcastAutomation: migratedLiveBroadcast,
+                ...site, brandGuideline: site.brandGuideline || '', brandLogoLight: site.brandLogoLight || (site as any).brandLogo || '', brandLogoDark: site.brandLogoDark || '', brandColors: site.brandColors || '', brandFonts: site.brandFonts || '', characterReferences: site.characterReferences || [], authorName: site.authorName || site.wordpressUsername || 'Admin', authorId: site.authorId, availableAuthors: site.availableAuthors || [], availableCategories: site.availableCategories || [], isStrictCategoryMatching: site.isStrictCategoryMatching ?? false, scheduleGenerationSource: site.scheduleGenerationSource || generationSource, rssSources: site.rssSources || [], googleSheetSources: site.googleSheetSources || [], recurringSchedules: site.recurringSchedules || [], history: migratedHistory, monthlyGenerationsCount: site.monthlyGenerationsCount || 0, videoSources: site.videoSources || [], references: site.references || [], monitoredBacklinks: site.monitoredBacklinks || [], isAutomationEnabled: site.isAutomationEnabled ?? false, isAutoPublishEnabled: site.isAutoPublishEnabled ?? true, drafts: site.drafts || [], lastAutoPilotRun: site.lastAutoPilotRun, isInPostImagesEnabled: site.isInPostImagesEnabled ?? false, numberOfInPostImages: site.numberOfInPostImages ?? 3, socialMediaSettings: migratedSocialSettings, mailchimpSettings: site.mailchimpSettings || defaultMailchimpSettings, googleAnalyticsSettings: site.googleAnalyticsSettings || defaultAnalyticsSettings, clarityProjectId: site.clarityProjectId || '', supabaseConnection: site.supabaseConnection || defaultSupabaseConnection, paystackConnection: site.paystackConnection || defaultPaystackConnection, payfastConnection: site.payfastConnection || defaultPayfastConnection, wiseConnection: site.wiseConnection || defaultWiseConnection, payoneerConnection: site.payoneerConnection || defaultPayoneerConnection, stripeConnection: site.stripeConnection || defaultStripeConnection, payPalConnection: site.payPalConnection || defaultPayPalConnection, activePaymentGateway: site.activePaymentGateway, modelConfig: migratedModelConfig, apiKeys: site.apiKeys || defaultApiKeys, apiUsage: site.apiUsage || defaultApiUsage, fetchedModels: site.fetchedModels || {}, isAssistantEnabled: site.isAssistantEnabled ?? true, isVoiceControlEnabled: site.isVoiceControlEnabled ?? true, isVideoControlEnabled: site.isVideoControlEnabled ?? true, isTextControlEnabled: site.isTextControlEnabled ?? true,
+                automationTrigger: site.automationTrigger === 'interval' ? 'daily' : (site.automationTrigger || 'daily'), automationDailyTime: site.automationDailyTime || '09:00', automationTimezone: site.automationTimezone || defaultTimezone, dailyGenerationSource: site.dailyGenerationSource || site.intervalGenerationSource || generationSource,
+                isSocialGraphicAutomationEnabled: site.isSocialGraphicAutomationEnabled ?? false, isSocialGraphicAutoPublishEnabled: site.isSocialGraphicAutoPublishEnabled ?? true, socialGraphicAutomationTrigger: site.socialGraphicAutomationTrigger === 'interval' ? 'daily' : (site.socialGraphicAutomationTrigger || 'daily'), socialGraphicDailyTime: site.socialGraphicDailyTime || '14:00', lastSocialGraphicAutoPilotRun: site.lastSocialGraphicAutoPilotRun, socialGraphicRecurringSchedules: site.socialGraphicRecurringSchedules || [], socialGraphicGenerationSource: site.socialGraphicGenerationSource || 'keyword',
+                isSocialVideoAutomationEnabled: site.isSocialVideoAutomationEnabled ?? false, isSocialVideoAutoPublishEnabled: site.isSocialVideoAutoPublishEnabled ?? true, socialVideoAutomationTrigger: site.socialVideoAutomationTrigger === 'interval' ? 'daily' : (site.socialVideoAutomationTrigger || 'daily'), socialVideoDailyTime: site.socialVideoDailyTime || '18:00', lastSocialVideoAutoPilotRun: site.lastSocialVideoAutoPilotRun, socialVideoRecurringSchedules: site.socialVideoRecurringSchedules || [], socialVideoGenerationSource: site.socialVideoGenerationSource || 'keyword',
+                isEmailMarketingAutomationEnabled: site.isEmailMarketingAutomationEnabled ?? false, emailMarketingAutomationTrigger: site.emailMarketingAutomationTrigger || 'daily', emailMarketingDailyTime: site.emailMarketingDailyTime || '10:00', lastEmailMarketingAutoPilotRun: site.lastEmailMarketingAutoPilotRun, emailMarketingRecurringSchedules: site.emailMarketingRecurringSchedules || [], emailMarketingGenerationSource: site.emailMarketingGenerationSource || 'newly_published_post',
+                seoDataProvider: site.seoDataProvider || 'google_search', isLocalSeoEnabled: site.isLocalSeoEnabled ?? false, localSeoServiceArea: site.localSeoServiceArea || '', localSeoBusinessName: site.localSeoBusinessName || '', localSeoPhoneNumber: site.localSeoPhoneNumber || '',
+                isAgencyAgentEnabled: site.isAgencyAgentEnabled ?? false, agentCheckFrequencyHours: site.agentCheckFrequencyHours || 24, agentActionOnDiscovery: site.agentActionOnDiscovery || 'addToReviewList', agencyAgentLogs: site.agencyAgentLogs || [], agentScheduledPosts: site.agentScheduledPosts || [], lastAgentRun: site.lastAgentRun, liveBroadcastAutomation: migratedLiveBroadcast,
               };
               
-              // Clean up old interval properties
-              delete (newSite as any).automationIntervalHours;
-              delete (newSite as any).intervalGenerationSource;
-              delete (newSite as any).socialGraphicAutomationIntervalHours;
-              delete (newSite as any).socialVideoAutomationIntervalHours;
-              delete (newSite as any).brandLogo;
-              delete (newSite as any).mcpServers;
-              delete (newSite as any).mcpTextServerId;
-              delete (newSite as any).mcpImageServerId;
-              delete (newSite as any).mcpVideoServerId;
-              delete (newSite as any).stripeConnection;
-              delete (newSite as any).sundayServiceAutomation;
-              delete (newSite.liveBroadcastAutomation as any)?.facebookLiveUrl;
-              delete (newSite.liveBroadcastAutomation as any)?.youtubeLiveUrl;
-              delete (newSite.liveBroadcastAutomation as any)?.tiktokLiveUrl;
-              delete (newSite.liveBroadcastAutomation as any)?.xLiveUrl;
-              delete (newSite.liveBroadcastAutomation as any)?.xComLiveUrl;
+              delete (newSite as any).automationIntervalHours; delete (newSite as any).intervalGenerationSource; delete (newSite as any).socialGraphicAutomationIntervalHours; delete (newSite as any).socialVideoAutomationIntervalHours; delete (newSite as any).brandLogo; delete (newSite as any).mcpServers; delete (newSite as any).mcpTextServerId; delete (newSite as any).mcpImageServerId; delete (newSite as any).mcpVideoServerId; delete (newSite as any).stripeConnection; delete (newSite as any).sundayServiceAutomation; delete (newSite.liveBroadcastAutomation as any)?.facebookLiveUrl; delete (newSite.liveBroadcastAutomation as any)?.youtubeLiveUrl; delete (newSite.liveBroadcastAutomation as any)?.tiktokLiveUrl; delete (newSite.liveBroadcastAutomation as any)?.xLiveUrl; delete (newSite.liveBroadcastAutomation as any)?.xComLiveUrl;
 
-              // Migration for single source URLs to array-based sources
-              if (site.rssFeedUrl && (!site.rssSources || site.rssSources.length === 0)) {
-                newSite.rssSources = [{
-                    id: crypto.randomUUID(),
-                    url: site.rssFeedUrl,
-                    name: site.rssFeedUrl,
-                    processedRssGuids: site.processedRssGuids || []
-                }];
-              }
-              if (site.googleSheetUrl && (!site.googleSheetSources || site.googleSheetSources.length === 0)) {
-                  newSite.googleSheetSources = [{
-                      id: crypto.randomUUID(),
-                      url: site.googleSheetUrl,
-                      name: site.googleSheetUrl,
-                      processedGoogleSheetRows: site.processedGoogleSheetRows || []
-                  }];
-              }
+              if (site.rssFeedUrl && (!site.rssSources || site.rssSources.length === 0)) { newSite.rssSources = [{ id: crypto.randomUUID(), url: site.rssFeedUrl, name: site.rssFeedUrl, processedRssGuids: site.processedRssGuids || [] }]; }
+              if (site.googleSheetUrl && (!site.googleSheetSources || site.googleSheetSources.length === 0)) { newSite.googleSheetSources = [{ id: crypto.randomUUID(), url: site.googleSheetUrl, name: site.googleSheetUrl, processedGoogleSheetRows: site.processedGoogleSheetRows || [] }]; }
               
               if ((newSite as any).generationSource) delete (newSite as any).generationSource;
               if (site.videoUrlList) newSite.videoSources = site.videoUrlList.split('\n').filter((url: string) => url.trim()).map((url: string) => ({ id: crypto.randomUUID(), url: url.trim(), type: 'video', name: url.trim().replace(/^\[DONE\]\s*/, ''), processedVideoGuids: url.trim().startsWith('[DONE]') ? [url.trim().replace(/^\[DONE\]\s*/, '')] : [] }));
               if (!site.references) newSite.references = [];
               if (site.scheduledPosts) delete site.scheduledPosts;
               if (site.socialGraphicPromptList) delete (newSite as any).socialGraphicPromptList;
-              delete (newSite as any).rssFeedUrl;
-              delete (newSite as any).processedRssGuids;
-              delete (newSite as any).googleSheetUrl;
-              delete (newSite as any).processedGoogleSheetRows;
+              delete (newSite as any).rssFeedUrl; delete (newSite as any).processedRssGuids; delete (newSite as any).googleSheetUrl; delete (newSite as any).processedGoogleSheetRows;
               
               if (newSite.keywordList && !site.history) {
                 const newHistory: PostHistoryItem[] = [];
                 const newKeywordList: string[] = [];
                 newSite.keywordList.split('\n').forEach((line: string) => {
                   const match = line.trim().match(/^\[DONE\]\s*(.*?)\s*—\s*(https?:\/\/\S+)\s*—\s*(\d{4}-\d{2}-\d{2})/);
-                  if (match) {
-                    newHistory.push({ id: crypto.randomUUID(), topic: match[1], url: match[2], date: new Date(match[3]).getTime(), type: 'Keyword' });
-                    newKeywordList.push(`[DONE] ${match[1]}`);
-                  } else { newKeywordList.push(line); }
+                  if (match) { newHistory.push({ id: crypto.randomUUID(), topic: match[1], url: match[2], date: new Date(match[3]).getTime(), type: 'Keyword' }); newKeywordList.push(`[DONE] ${match[1]}`); } else { newKeywordList.push(line); }
                 });
-                if(newHistory.length > 0) {
-                  newSite.history = [...newSite.history, ...newHistory];
-                  newSite.keywordList = newKeywordList.join('\n');
-                }
+                if(newHistory.length > 0) { newSite.history = [...newSite.history, ...newHistory]; newSite.keywordList = newKeywordList.join('\n'); }
               }
               return newSite;
           });
@@ -725,48 +645,14 @@ export const App: React.FC = () => {
         const newSite: Site = {
           id: crypto.randomUUID(), name: settings.wordpressUrl || "My First Site", wordpressUrl: settings.wordpressUrl || '', wordpressUsername: settings.wordpressUsername || '', applicationPassword: settings.applicationPassword || '',
           brandGuideline: settings.brandGuideline || '', brandLogoLight: '', brandLogoDark: '', brandColors: '', brandFonts: '', characterReferences: [], promoLink1: settings.promoLink1 || '', promoLink2: settings.promoLink2 || '', keywordList: settings.keywordList || '',
-          googleSheetSources: [],
-          rssSources: [],
-          videoSources: [], references: [], monitoredBacklinks: [], authorName: settings.wordpressUsername || 'Admin', authorId: undefined, availableAuthors: [], availableCategories: [], isStrictCategoryMatching: false, history: [], monthlyGenerationsCount: 0,
-          isAutomationEnabled: settings.isAutomationEnabled ?? false, automationTrigger: 'daily', automationDailyTime: '09:00', automationTimezone: defaultTimezone,
-          lastAutoPilotRun: undefined,
-          recurringSchedules: [], dailyGenerationSource: 'keyword', scheduleGenerationSource: 'keyword',
-          isAutoPublishEnabled: true, drafts: [],
-          isInPostImagesEnabled: false,
-          numberOfInPostImages: 3,
-          socialMediaSettings: defaultSocialSettings,
-          mailchimpSettings: defaultMailchimpSettings,
-          googleAnalyticsSettings: defaultAnalyticsSettings,
-          clarityProjectId: '',
-          supabaseConnection: defaultSupabaseConnection,
-          paystackConnection: defaultPaystackConnection,
-          payfastConnection: defaultPayfastConnection,
-          wiseConnection: defaultWiseConnection,
-          payoneerConnection: defaultPayoneerConnection,
-          stripeConnection: defaultStripeConnection,
-          payPalConnection: defaultPayPalConnection,
-          modelConfig: defaultModelConfig,
-          apiKeys: defaultApiKeys,
-          apiUsage: defaultApiUsage,
-          fetchedModels: {},
-          isAssistantEnabled: true,
-          isVoiceControlEnabled: true,
-          isVideoControlEnabled: true,
-          isTextControlEnabled: true,
-          isSocialGraphicAutomationEnabled: false, socialGraphicAutomationTrigger: 'daily',
-          isSocialGraphicAutoPublishEnabled: true,
-          socialGraphicDailyTime: '14:00', lastSocialGraphicAutoPilotRun: undefined, socialGraphicRecurringSchedules: [],
-          socialGraphicGenerationSource: 'keyword',
-          isSocialVideoAutomationEnabled: false, socialVideoAutomationTrigger: 'daily',
-          isSocialVideoAutoPublishEnabled: true,
-          socialVideoDailyTime: '18:00', lastSocialVideoAutoPilotRun: undefined, socialVideoRecurringSchedules: [],
-          socialVideoGenerationSource: 'keyword',
-          isEmailMarketingAutomationEnabled: false, emailMarketingAutomationTrigger: 'daily',
-          emailMarketingDailyTime: '10:00', lastEmailMarketingAutoPilotRun: undefined, emailMarketingRecurringSchedules: [],
-          emailMarketingGenerationSource: 'newly_published_post',
-          seoDataProvider: 'google_search', isLocalSeoEnabled: false, localSeoServiceArea: '', localSeoBusinessName: '', localSeoPhoneNumber: '',
-          isAgencyAgentEnabled: false, agentCheckFrequencyHours: 24, agentActionOnDiscovery: 'addToReviewList', agencyAgentLogs: [], agentScheduledPosts: [], lastAgentRun: undefined,
-          liveBroadcastAutomation: defaultLiveBroadcast,
+          googleSheetSources: [], rssSources: [], videoSources: [], references: [], monitoredBacklinks: [], authorName: settings.wordpressUsername || 'Admin', authorId: undefined, availableAuthors: [], availableCategories: [], isStrictCategoryMatching: false, history: [], monthlyGenerationsCount: 0,
+          isAutomationEnabled: settings.isAutomationEnabled ?? false, automationTrigger: 'daily', automationDailyTime: '09:00', automationTimezone: defaultTimezone, lastAutoPilotRun: undefined, recurringSchedules: [], dailyGenerationSource: 'keyword', scheduleGenerationSource: 'keyword', isAutoPublishEnabled: true, drafts: [], isInPostImagesEnabled: false, numberOfInPostImages: 3,
+          socialMediaSettings: defaultSocialSettings, mailchimpSettings: defaultMailchimpSettings, googleAnalyticsSettings: defaultAnalyticsSettings, clarityProjectId: '', supabaseConnection: defaultSupabaseConnection, paystackConnection: defaultPaystackConnection, payfastConnection: defaultPayfastConnection, wiseConnection: defaultWiseConnection, payoneerConnection: defaultPayoneerConnection, stripeConnection: defaultStripeConnection, payPalConnection: defaultPayPalConnection,
+          modelConfig: defaultModelConfig, apiKeys: defaultApiKeys, apiUsage: defaultApiUsage, fetchedModels: {}, isAssistantEnabled: true, isVoiceControlEnabled: true, isVideoControlEnabled: true, isTextControlEnabled: true,
+          isSocialGraphicAutomationEnabled: false, socialGraphicAutomationTrigger: 'daily', isSocialGraphicAutoPublishEnabled: true, socialGraphicDailyTime: '14:00', lastSocialGraphicAutoPilotRun: undefined, socialGraphicRecurringSchedules: [], socialGraphicGenerationSource: 'keyword',
+          isSocialVideoAutomationEnabled: false, socialVideoAutomationTrigger: 'daily', isSocialVideoAutoPublishEnabled: true, socialVideoDailyTime: '18:00', lastSocialVideoAutoPilotRun: undefined, socialVideoRecurringSchedules: [], socialVideoGenerationSource: 'keyword',
+          isEmailMarketingAutomationEnabled: false, emailMarketingAutomationTrigger: 'daily', emailMarketingDailyTime: '10:00', lastEmailMarketingAutoPilotRun: undefined, emailMarketingRecurringSchedules: [], emailMarketingGenerationSource: 'newly_published_post',
+          seoDataProvider: 'google_search', isLocalSeoEnabled: false, localSeoServiceArea: '', localSeoBusinessName: '', localSeoPhoneNumber: '', isAgencyAgentEnabled: false, agentCheckFrequencyHours: 24, agentActionOnDiscovery: 'addToReviewList', agencyAgentLogs: [], agentScheduledPosts: [], lastAgentRun: undefined, liveBroadcastAutomation: defaultLiveBroadcast,
         };
         finalSites.push(newSite);
         storageService.removeLegacySiteSettings();
@@ -790,7 +676,6 @@ export const App: React.FC = () => {
     storageService.migrateGuestDataToUser(user);
     const loadData = async () => {
         const { sites: savedSites } = await storageService.loadSitesAndLastId(user);
-        // A user is considered onboarded if they have a subscription plan OR if they have at least one site.
         if (user.subscriptionPlan || (savedSites && savedSites.length > 0)) {
             setIsOnboarding(false);
         } else {
@@ -858,482 +743,6 @@ export const App: React.FC = () => {
     setIsProfileModalOpen(false);
     setActiveTab('subscription');
   }
-
-  useEffect(() => {
-    const checkSession = async () => {
-        let { user, impersonatingAdmin } = await authService.getCurrentUser();
-        if (user) {
-            setCurrentUser(user);
-            if (impersonatingAdmin) {
-                setImpersonatingUser(impersonatingAdmin);
-            }
-            if (user.isAdmin && !impersonatingAdmin) {
-                setIsOnboarding(false);
-            } else {
-                const { sites: savedSites } = await storageService.loadSitesAndLastId(user);
-                // A user is considered onboarded if they have a subscription plan OR if they have at least one site.
-                if (user.subscriptionPlan || (savedSites && savedSites.length > 0)) {
-                    setIsOnboarding(false);
-                } else {
-                    setIsOnboarding(true);
-                }
-                await loadUserData(user);
-            }
-        }
-        setAuthLoading(false);
-    };
-
-    try {
-      const handleAsyncCallback = async () => {
-        const callbackData = oauthService.handleOAuthCallback();
-        if (callbackData) {
-            const { platform, siteId, accountId, code } = callbackData;
-            
-            const { user: activeUser } = await authService.getCurrentUser();
-            if (!activeUser) {
-                console.error("OAuth callback: No active user session.");
-                toast.addToast("Your session expired. Please log in and try connecting again.", 'error');
-                setAuthLoading(false);
-                return;
-            }
-            setCurrentUser(activeUser);
-            
-            const { sites: userSites } = await storageService.loadSitesAndLastId(activeUser);
-            const targetSite = userSites?.find(s => s.id === siteId);
-
-            if (!targetSite) {
-                console.error("OAuth callback: Could not find site for token exchange.");
-                toast.addToast("Could not complete the connection process. Site details are missing.", 'error');
-                setAuthLoading(false);
-                return;
-            }
-            
-            if (platform === 'meta') {
-                const { metaClientId, metaClientSecret } = targetSite.socialMediaSettings;
-                if (metaClientId && metaClientSecret) {
-                    setIsConnectingSocial(`meta-${accountId}`);
-                    try {
-                        const { accessToken } = await oauthService.exchangeCodeForToken('meta', code, targetSite, accountId);
-                        const userInfo = await oauthService.verifyConnection('meta', accessToken);
-                        const assets = await oauthService.getMetaAssets(accessToken);
-                        
-                        const newMetaConnection: MetaConnection = {
-                            id: crypto.randomUUID(),
-                            name: userInfo.data.name,
-                            userId: userInfo.data.id,
-                            userAccessToken: accessToken,
-                            isConnected: true,
-                            status: 'connected',
-                            statusMessage: 'Connected successfully!',
-                            assets: assets.map(a => ({...a, isEnabled: true})) // Enable all assets by default
-                        };
-                        
-                        const currentSettings = targetSite.socialMediaSettings;
-                        targetSite.socialMediaSettings = { ...currentSettings, meta: [newMetaConnection] };
-                        storageService.saveSites(userSites!, activeUser);
-                    } catch (err) {
-                        console.error("Failed to exchange Meta OAuth code for token:", err);
-                        toast.addToast(`Failed to connect Meta: ${(err as Error).message}`, 'error');
-                    } finally {
-                        setIsConnectingSocial(null);
-                    }
-                }
-            } else if (platform === 'meta_ads') {
-                const { metaAdsClientId, metaAdsClientSecret } = targetSite.socialMediaSettings;
-                if (metaAdsClientId && metaAdsClientSecret) {
-                    setIsConnectingSocial(`meta_ads-${accountId}`);
-                    try {
-                        const { accessToken } = await oauthService.exchangeCodeForToken('meta_ads', code, targetSite, accountId);
-                        const userInfo = await oauthService.verifyConnection('meta_ads', accessToken);
-                        const adAccounts = await oauthService.getMetaAdAccounts(accessToken);
-                        
-                        const newMetaAdsConnection: MetaAdsConnection = {
-                            id: crypto.randomUUID(),
-                            name: userInfo.data.name,
-                            userId: userInfo.data.id,
-                            userAccessToken: accessToken,
-                            isConnected: true,
-                            status: 'connected',
-                            statusMessage: 'Connected successfully!',
-                            adAccounts: adAccounts.map(a => ({...a, isEnabled: true}))
-                        };
-                        
-                        const currentSettings = targetSite.socialMediaSettings;
-                        targetSite.socialMediaSettings = { ...currentSettings, meta_ads: [newMetaAdsConnection] };
-                        storageService.saveSites(userSites!, activeUser);
-                    } catch (err) {
-                        console.error("Failed to exchange Meta Ads OAuth code for token:", err);
-                        toast.addToast(`Failed to connect Meta Ads: ${(err as Error).message}`, 'error');
-                    } finally {
-                        setIsConnectingSocial(null);
-                    }
-                }
-            } else if (platform === 'google_ads') {
-                const { googleAdsClientId, googleAdsClientSecret } = targetSite.socialMediaSettings;
-                if (googleAdsClientId && googleAdsClientSecret) {
-                    setIsConnectingSocial(`google_ads-${accountId}`);
-                    try {
-                        const { accessToken } = await oauthService.exchangeCodeForToken('google_ads', code, targetSite, accountId);
-                        const userInfo = await oauthService.verifyConnection('google_ads', accessToken);
-                        const adAccounts = await oauthService.getGoogleAdAccounts(accessToken);
-                        
-                        const newGoogleAdsConnection: GoogleAdsConnection = {
-                            id: crypto.randomUUID(),
-                            name: userInfo.data.name,
-                            userAccessToken: accessToken,
-                            isConnected: true,
-                            status: 'connected',
-                            statusMessage: 'Connected successfully!',
-                            adAccounts: adAccounts.map(a => ({...a, isEnabled: true}))
-                        };
-                        
-                        const currentSettings = targetSite.socialMediaSettings;
-                        targetSite.socialMediaSettings = { ...currentSettings, google_ads: [newGoogleAdsConnection] };
-                        storageService.saveSites(userSites!, activeUser);
-                    } catch (err) {
-                        console.error("Failed to exchange Google Ads OAuth code for token:", err);
-                        toast.addToast(`Failed to connect Google Ads: ${(err as Error).message}`, 'error');
-                    } finally {
-                        setIsConnectingSocial(null);
-                    }
-                }
-            } else if (platform === 'google_analytics') {
-                if (targetSite.googleAnalyticsSettings.clientId && targetSite.googleAnalyticsSettings.clientSecret) {
-                    setIsConnectingSocial(`google_analytics-${accountId}`);
-                    try {
-                        const { accessToken } = await oauthService.exchangeCodeForToken('google_analytics', code, targetSite, accountId);
-                        const properties = await googleAnalyticsService.getCoreMetrics(accessToken, 'DUMMY_ID').then(() => [
-                            { id: 'properties/12345678', name: 'My Awesome Blog (GA4)' },
-                            { id: 'properties/87654321', name: 'My Other Site (GA4)' },
-                        ]);
-                        
-                        targetSite.googleAnalyticsSettings = {
-                            ...targetSite.googleAnalyticsSettings,
-                            isConnected: true,
-                            accessToken,
-                            statusMessage: 'Connected! Please select a property.',
-                            availableProperties: properties
-                        };
-                        storageService.saveSites(userSites!, activeUser);
-                    } catch (err) {
-                        console.error("Failed to exchange GA OAuth code for token:", err);
-                        toast.addToast(`Failed to connect Google Analytics: ${(err as Error).message}`, 'error');
-                    } finally {
-                        setIsConnectingSocial(null);
-                    }
-                }
-            } else if (platform === 'google_calendar') {
-                const { googleCalendarClientId, googleCalendarClientSecret } = targetSite.socialMediaSettings;
-                if (googleCalendarClientId && googleCalendarClientSecret) {
-                    setIsConnectingSocial(`google_calendar-${accountId}`);
-                    try {
-                        const { accessToken } = await oauthService.exchangeCodeForToken('google_calendar', code, targetSite, accountId);
-                        const calendars = await googleCalendarService.fetchCalendarList(accessToken);
-                        const primaryCalendar = calendars.find(c => c.primary) || calendars[0];
-                        
-                        targetSite.googleCalendarConnection = {
-                            isConnected: true,
-                            accessToken,
-                            statusMessage: 'Connected! A primary calendar has been selected.',
-                            availableCalendars: calendars,
-                            primaryCalendarId: primaryCalendar?.id || ''
-                        };
-                        storageService.saveSites(userSites!, activeUser);
-                    } catch (err) {
-                        console.error("Failed to connect Google Calendar:", err);
-                        toast.addToast(`Failed to connect Google Calendar: ${(err as Error).message}`, 'error');
-                    } finally {
-                        setIsConnectingSocial(null);
-                    }
-                }
-            } else { // Handle social media connections
-                const platformKey = platform as any;
-                const accountsForPlatform = targetSite?.socialMediaSettings[platformKey as keyof SocialMediaSettings];
-                const targetAccount = Array.isArray(accountsForPlatform) ? accountsForPlatform.find((acc: any) => acc.id === accountId) : undefined;
-    
-                if (targetAccount && 'clientId' in targetAccount && targetAccount.clientId && 'clientSecret' in targetAccount && targetAccount.clientSecret) {
-                    setIsConnectingSocial(`${platform}-${accountId}`);
-                    try {
-                        const { accessToken } = await oauthService.exchangeCodeForToken(platform as any, code, targetSite, accountId);
-                        targetAccount.isConnected = true;
-                        targetAccount.accessToken = accessToken;
-                        targetAccount.status = 'connected';
-                        targetAccount.statusMessage = '';
-                        storageService.saveSites(userSites!, activeUser);
-                    } catch (err) {
-                        console.error("Failed to exchange OAuth code for token:", err);
-                        toast.addToast(`Failed to connect ${platform}: ${(err as Error).message}`, 'error');
-                    } finally {
-                        setIsConnectingSocial(null);
-                    }
-                } else {
-                    console.error("OAuth callback: Could not find account credentials for token exchange.");
-                    toast.addToast("Could not complete the connection process. Account details are missing.", 'error');
-                }
-            }
-            
-            await loadUserData(activeUser);
-            setSelectedSiteId(siteId);
-            setActiveTab('connections');
-        }
-      };
-
-      handleAsyncCallback().then(() => {
-        checkSession();
-      });
-
-    } catch (error: any) { 
-        console.warn("Could not load settings from storage:", error); 
-        setAuthLoading(false);
-    }
-  }, [loadUserData, toast]);
-  
-  // This effect sets a timer to automatically downgrade a user when their trial expires,
-  // without requiring them to refresh the page.
-  useEffect(() => {
-    let trialEndTimer: number | null = null;
-
-    // Check if the user is on an active trial
-    if (currentUser?.trialEndsAt && currentUser.trialEndsAt > Date.now()) {
-      const msUntilExpiry = currentUser.trialEndsAt - Date.now();
-      
-      // Set a timeout for the exact moment the trial ends
-      trialEndTimer = window.setTimeout(async () => {
-        if (currentUser) { // Check if user is still logged in
-            console.log("User trial has ended. Downgrading to free plan in the background.");
-            try {
-              const updatedUser = await authService.updateUser(currentUser.email, {
-                subscriptionPlan: 'free',
-                trialEndsAt: undefined // Remove the trial property
-              });
-              // Update the user state in the app to reflect the change immediately
-              setCurrentUser(updatedUser);
-            } catch (e) {
-              console.error("Failed to automatically downgrade user after trial:", e);
-              // The user will be downgraded on the next refresh by the logic in getCurrentUser anyway.
-            }
-        }
-      }, msUntilExpiry);
-    }
-
-    // Cleanup function to clear the timer if the component unmounts or the user changes
-    return () => {
-      if (trialEndTimer) {
-        clearTimeout(trialEndTimer);
-      }
-    };
-  }, [currentUser]); // This effect re-runs whenever the user state changes.
-
-  const logApiUsage = useCallback((provider: keyof ApiKeys, cost: number) => {
-    if (!selectedSiteId || !provider || cost === 0) return;
-    setSites(prevSites =>
-        prevSites.map(site => {
-            if (site.id === selectedSiteId) {
-                const currentCost = site.apiUsage?.[provider] || 0;
-                const newApiUsage = { ...(site.apiUsage || {}), [provider]: currentCost + cost };
-                return { ...site, apiUsage: newApiUsage };
-            }
-            return site;
-        })
-    );
-  }, [selectedSiteId]);
-  
-  useEffect(() => {
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    if (!currentUser || currentUser.isAdmin) return;
-    
-    if (!isInitialMount.current) {
-      setSaveStatus('saving');
-    }
-
-    saveTimeoutRef.current = window.setTimeout(async () => {
-        try {
-            if (sites.length > 0) {
-                await storageService.saveSites(sites, currentUser);
-                if (selectedSiteId) {
-                    await storageService.saveLastSelectedSiteId(currentUser.uid, selectedSiteId);
-                }
-            } else {
-                await storageService.clearAllSitesData(currentUser);
-            }
-            
-            if (isInitialMount.current) {
-                isInitialMount.current = false;
-            } else {
-                setSaveStatus('saved');
-                saveTimeoutRef.current = window.setTimeout(() => setSaveStatus('idle'), 2000);
-            }
-        } catch (error: any) {
-            console.warn("Could not save settings to storage:", error);
-            if (!isInitialMount.current) {
-                setSaveStatus('idle');
-            }
-        }
-    }, 1500);
-
-    return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); };
-  }, [sites, selectedSiteId, currentUser]);
-  
-  // This effect listens for changes in localStorage made by the background
-  // automation service and reloads the UI state to reflect those changes.
-  useEffect(() => {
-    const handleStorageChange = (event: StorageEvent) => {
-      const userSitesKey = currentUser ? `zenith-engine-ai-sites-${currentUser.uid}` : null; // Fixed: Use UID for key
-      if (event.key === userSitesKey && currentUser) {
-        console.log('Storage changed by background process, reloading UI...');
-        loadUserData(currentUser);
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [currentUser, loadUserData]);
-
-  const handleSiteUpdate = useCallback((field: keyof Site, value: any) => {
-    if (!selectedSiteId) return;
-    setSites(prevSites =>
-      prevSites.map(site =>
-        site.id === selectedSiteId ? { ...site, [field]: value } : site
-      )
-    );
-  }, [selectedSiteId]);
-  
-  const handleMultipleSiteUpdates = useCallback((updates: Partial<Site>) => {
-    if (!selectedSiteId) return;
-    setSites(prevSites =>
-      prevSites.map(site =>
-        site.id === selectedSiteId ? { ...site, ...updates } : site
-      )
-    );
-  }, [selectedSiteId]);
-
-  const handleResetAllSitesSpend = useCallback(() => {
-    setSites(prevSites => 
-        prevSites.map(site => {
-            const resetUsage: Partial<Record<keyof ApiKeys, number>> = {};
-            for (const key in site.apiKeys) {
-                resetUsage[key as keyof ApiKeys] = 0;
-            }
-            return { ...site, apiUsage: resetUsage };
-        })
-    );
-  }, []);
-
-  const handleAddNewSite = useCallback(() => {
-    if (sites.length >= planAccess.siteLimit) {
-        toast.addToast(`You have reached the ${planAccess.plan} plan's limit of ${planAccess.siteLimit} site(s). Please upgrade to add more.`, 'error');
-        setActiveTab('subscription');
-        return;
-    }
-
-    const defaultTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-    const newSite: Site = {
-      id: crypto.randomUUID(), name: `New Site ${sites.length + 1}`, wordpressUrl: '', wordpressUsername: '', applicationPassword: '',
-      brandGuideline: '', brandLogoLight: '', brandLogoDark: '', brandColors: '', brandFonts: '', characterReferences: [], promoLink1: '', promoLink2: '', keywordList: '',
-      googleSheetSources: [],
-      rssSources: [],
-      videoSources: [], references: [], monitoredBacklinks: [], authorName: '', authorId: undefined, availableAuthors: [], availableCategories: [], isStrictCategoryMatching: false, history: [], monthlyGenerationsCount: 0,
-      isAutomationEnabled: false, automationTrigger: 'daily', automationDailyTime: '09:00', automationTimezone: defaultTimezone, lastAutoPilotRun: undefined, recurringSchedules: [],
-      isAutoPublishEnabled: true, drafts: [],
-      dailyGenerationSource: 'keyword', scheduleGenerationSource: 'keyword',
-      isInPostImagesEnabled: false,
-      numberOfInPostImages: 3,
-      socialMediaSettings: { twitter: [], facebook: [], linkedin: [], instagram: [], pinterest: [], whatsapp: [], youtube: [], tiktok: [], telegram: [], snapchat: [], meta: [], meta_ads: [], google_ads: [] },
-      mailchimpSettings: { apiKey: '', serverPrefix: '', defaultListId: '', isConnected: false },
-      googleAnalyticsSettings: { isConnected: false },
-      clarityProjectId: '',
-      supabaseConnection: { url: '', anonKey: '', status: 'disconnected' },
-      paystackConnection: { publicKey: '', secretKey: '', status: 'disconnected' },
-      payfastConnection: { merchantId: '', merchantKey: '', passphrase: '', status: 'disconnected' },
-      wiseConnection: { apiKey: '', status: 'disconnected' },
-      payoneerConnection: { partnerId: '', programId: '', apiKey: '', status: 'disconnected' },
-      stripeConnection: { publicKey: '', secretKey: '', status: 'disconnected' },
-      payPalConnection: { clientId: '', clientSecret: '', status: 'disconnected' },
-      modelConfig: { 
-        textProvider: AiProvider.GOOGLE, textModel: AVAILABLE_MODELS.GOOGLE.text[0], 
-        imageProvider: AiProvider.GOOGLE, imageModel: AVAILABLE_MODELS.GOOGLE.image[0],
-        videoProvider: AiProvider.GOOGLE, videoModel: AVAILABLE_MODELS.GOOGLE.video[0],
-      },
-      apiKeys: { google: '', openAI: '', anthropic: '', openRouter: '', xai: '', replicate: '', openArt: '', dataforseo: '' },
-      apiUsage: { google: 0, openAI: 0, anthropic: 0, openRouter: 0, xai: 0, replicate: 0, openArt: 0, dataforseo: 0 },
-      fetchedModels: {},
-      isAssistantEnabled: true,
-      isVoiceControlEnabled: true,
-      isVideoControlEnabled: true,
-      isTextControlEnabled: true,
-      isSocialGraphicAutomationEnabled: false, socialGraphicAutomationTrigger: 'daily',
-      isSocialGraphicAutoPublishEnabled: true,
-      socialGraphicDailyTime: '14:00', lastSocialGraphicAutoPilotRun: undefined, socialGraphicRecurringSchedules: [],
-      socialGraphicGenerationSource: 'keyword',
-      isSocialVideoAutomationEnabled: false, socialVideoAutomationTrigger: 'daily',
-      isSocialVideoAutoPublishEnabled: true,
-      socialVideoDailyTime: '18:00', lastSocialVideoAutoPilotRun: undefined, socialVideoRecurringSchedules: [],
-      socialVideoGenerationSource: 'keyword',
-      isEmailMarketingAutomationEnabled: false, emailMarketingAutomationTrigger: 'daily',
-      emailMarketingDailyTime: '10:00', lastEmailMarketingAutoPilotRun: undefined, emailMarketingRecurringSchedules: [],
-      emailMarketingGenerationSource: 'newly_published_post',
-      seoDataProvider: 'google_search', isLocalSeoEnabled: false, localSeoServiceArea: '', localSeoBusinessName: '', localSeoPhoneNumber: '',
-      isAgencyAgentEnabled: false, agentCheckFrequencyHours: 24, agentActionOnDiscovery: 'addToReviewList', agencyAgentLogs: [], agentScheduledPosts: [], lastAgentRun: undefined,
-      liveBroadcastAutomation: { isEnabled: false, sourceType: 'meta', facebookPageId: '', facebookPageUrl: '', youtubeChannelUrl: '', tiktokProfileUrl: '', xProfileUrl: '', scheduleType: 'monitor', broadcastDay: 0, broadcastStartTime: '10:00', broadcastEndTime: '12:00', dailyPostTimes: ['09:00', '17:00'], status: 'idle', currentWeekClips: [], youtubeSourceMethod: 'url', tiktokSourceMethod: 'url', xSourceMethod: 'url' },
-    };
-    setSites(prevSites => [...prevSites, newSite]);
-    setSelectedSiteId(newSite.id);
-  }, [sites.length, planAccess, toast]);
-  
-  const handleOpenDeleteDialog = useCallback(() => {
-      setIsDeleteDialogOpen(true);
-      setDeleteConfirmationInput('');
-  }, []);
-
-  const handleDeleteSite = useCallback(() => {
-    if (selectedSite && deleteConfirmationInput === selectedSite.name) {
-      setSites(prevSites => {
-        const remainingSites = prevSites.filter(s => s.id !== selectedSite.id);
-        if (remainingSites.length > 0) {
-          setSelectedSiteId(remainingSites[0].id);
-        } else {
-          setSelectedSiteId(null);
-        }
-        return remainingSites;
-      });
-      setIsDeleteDialogOpen(false);
-    } else {
-      toast.addToast("Confirmation text does not match the site name.", 'error');
-    }
-  }, [selectedSite, deleteConfirmationInput, toast]);
-  
-  const handleReviewDraft = useCallback((draftId: string) => {
-    if (!selectedSite) return;
-    const draft = selectedSite.drafts.find(d => d.id === draftId);
-    if (draft) {
-      setReviewingDraft(draft);
-      setBlogPost(draft.blogPost);
-      setStrategicBrief(draft.strategicBrief);
-      setStatus(AppStatus.READY_TO_PUBLISH);
-    }
-  }, [selectedSite]);
-
-  const onDiscardDraft = useCallback((draftId: string) => {
-    if (window.confirm("Are you sure you want to discard this draft? This cannot be undone.")) {
-      handleSiteUpdate('drafts', selectedSite?.drafts.filter(d => d.id !== draftId) || []);
-    }
-  }, [selectedSite, handleSiteUpdate]);
-
-  const resetGeneration = useCallback(() => {
-    setStatus(AppStatus.IDLE);
-    setBlogPost(null);
-    setStrategicBrief(null);
-    setPublishedPostUrl(null);
-    setCurrentTopic('');
-    setSeoScore(null);
-    setStatusMessage('');
-    setLastGeneratedSocialPosts(null);
-    setOriginalArticleForDiff(null);
-    setRefreshedArticleForDiff(null);
-  }, []);
 
   const onRefreshArticle = useCallback(async (url: string, site: Site) => {
       resetGeneration();
@@ -1712,7 +1121,7 @@ export const App: React.FC = () => {
         try {
             const { success, message } = await verifyPayfastConnection(connection);
             handleSiteUpdate('payfastConnection', { ...connection, status: success ? 'connected' : 'error', statusMessage: message });
-        } catch (e: any) {
+        } catch(e: any) {
             toast.addToast(e.message, 'error');
         }
     }, [selectedSite, handleSiteUpdate, toast]);
@@ -1811,10 +1220,18 @@ export const App: React.FC = () => {
         }
     }, [selectedSite, handleSiteUpdate, toast]);
 
-  // CRITICAL CHANGE: Check if backend is configured. If not, show setup wizard.
-  // This blocks normal authentication flow until the admin sets up the connection.
+  // CRITICAL CHANGE: Check if backend is configured. If not, show error message instead of wizard.
+  // This enforces the requirement that config must come from Env Vars.
   if (!isBackendConfigured()) {
-      return <BackendSetupWizard />;
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-950 text-white p-4 text-center">
+            <ExclamationTriangleIcon className="h-16 w-16 text-red-500 mb-4" />
+            <h1 className="text-3xl font-bold mb-2">Configuration Missing</h1>
+            <p className="text-gray-400 max-w-md">
+                The application backend is not configured. Please set the <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> environment variables on the server.
+            </p>
+        </div>
+      );
   }
 
   if (authLoading) {
@@ -1881,364 +1298,176 @@ export const App: React.FC = () => {
   const currentPlanDetails = planDetails[planAccess.plan];
   const PlanIcon = currentPlanDetails.icon;
 
-
   return (
-    <div className="h-full w-full flex flex-col md:flex-row bg-app text-main transition-colors duration-300">
-      {isSidebarOpen && (
-          <div 
-              onClick={() => setIsSidebarOpen(false)} 
-              className="fixed inset-0 bg-black/60 z-20 md:hidden backdrop-blur-sm"
-              aria-hidden="true"
+    <Layout
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      currentUser={currentUser}
+      handleSignOut={handleSignOut}
+      impersonatingUser={impersonatingUser}
+      planAccess={planAccess}
+      theme={theme}
+      toggleTheme={toggleTheme}
+    >
+      <div className="animate-fade-in">
+        <ActiveComponent
+            status={status}
+            blogPost={blogPost}
+            publishedPostUrl={publishedPostUrl}
+            lastGeneratedSocialPosts={lastGeneratedSocialPosts}
+            site={selectedSite}
+            sites={sites}
+            resetGeneration={resetGeneration}
+            handleConnectSocialMedia={handleConnectSocialMedia}
+            isConnectingSocial={isConnectingSocial}
+            handleBlogPostUpdate={handleBlogPostUpdate}
+            seoScore={seoScore}
+            statusMessage={statusMessage}
+            handlePublish={handlePublish}
+            isLoading={isLoading}
+            activeTab={activeTab}
+            activeSubTab={activeSubTab}
+            setActiveTab={setActiveTab}
+            generateAndScorePost={generateAndScorePost}
+            handleReviewDraft={handleReviewDraft}
+            handleSiteUpdate={handleSiteUpdate}
+            handleMultipleSiteUpdates={handleMultipleSiteUpdates}
+            setViewingHistoryItem={setViewingHistoryItem}
+            logApiUsage={logApiUsage}
+            handleResetAllSitesSpend={handleResetAllSitesSpend}
+            handleOpenDeleteDialog={handleOpenDeleteDialog}
+            handleVerifySocialMediaConnection={handleVerifySocialMediaConnection}
+            handleVerifyCredentialBasedConnection={handleVerifyCredentialBasedConnection}
+            onDiscardDraft={onDiscardDraft}
+            onRefreshAnalytics={onRefreshAnalytics}
+            onRefreshClarityData={onRefreshClarityData}
+            currentUser={currentUser}
+            handleUpdatePlan={handleUpdatePlan}
+            planAccess={planAccess}
+            onRefreshArticle={onRefreshArticle}
+            originalArticleForDiff={originalArticleForDiff}
+            refreshedArticleForDiff={refreshedArticleForDiff}
+            handleVerifyMailchimp={handleVerifyMailchimp}
+            handleVerifyClarity={handleVerifyClarity}
+            handleVerifySupabase={handleVerifySupabaseConnection}
+            handleVerifyPaystack={handleVerifyPaystackConnection}
+            handleVerifyPayfast={handleVerifyPayfastConnection}
+            handleVerifyWise={handleVerifyWiseConnection}
+            handleVerifyPayoneer={handleVerifyPayoneerConnection}
+            handleVerifyStripe={handleVerifyStripeConnection}
+            handleVerifyPayPal={handleVerifyPayPalConnection}
+        />
+      </div>
+      
+      {/* Modals and Overlays */}
+      {isProfileModalOpen && (
+          <ProfileModal
+              isOpen={isProfileModalOpen}
+              onClose={() => setIsProfileModalOpen(false)}
+              currentUser={currentUser}
+              onUserUpdate={handleUserUpdate}
+              onSignOut={handleSignOut}
+              planAccess={{
+                  plan: planAccess.plan,
+                  generationLimit: planAccess.generationLimit === Infinity ? 'Unlimited' : planAccess.generationLimit,
+                  generationsUsed: planAccess.generationsUsed
+              }}
+              onManageSubscription={handleManageSubscription}
           />
       )}
-      {/* --- SIDEBAR --- */}
-      <aside className={`group/sidebar absolute md:relative z-30 w-64 md:w-20 lg:w-64 md:hover:w-64 bg-panel border-r border-border flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
-        <div className="h-16 flex-shrink-0 flex items-center justify-between px-4 lg:px-6 border-b border-border bg-panel-solid">
-            <div className="flex items-center gap-3">
-                <LogoIcon className="h-7 w-7 text-brand-primary" />
-                <span className="font-bold text-xl text-main md:hidden lg:inline group-hover/sidebar:inline">{APP_TITLE}</span>
-            </div>
-            <button onClick={() => setIsSidebarOpen(false)} className="p-2 -mr-2 text-sub hover:text-main md:hidden"><XIcon className="h-6 w-6"/></button>
-        </div>
-        <div className="flex-1 min-h-0 flex flex-col">
-            <div className="p-4 border-b border-border">
-                <div className="flex items-center gap-2">
-                    <select value={selectedSiteId || ''} onChange={(e) => setSelectedSiteId(e.target.value)} className="input-base px-3 py-2 text-sm w-full truncate flex-1">
-                        {sites.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                    </select>
-                    
-                    {selectedSite && (
-                        <div className="relative group flex-shrink-0">
-                            <button
-                                onClick={() => setActiveTab('automation')}
-                                className="relative w-9 h-9 rounded-lg bg-panel-light border border-border-subtle hover:border-brand-primary hover:bg-bg-surface-highlight transition-colors flex items-center justify-center"
-                                aria-label="Automation Status"
-                            >
-                                <div className="relative flex h-4 w-4">
-                                    {isAnyAutomationReady && (
-                                        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75`}></span>
-                                    )}
-                                    <span className={`relative inline-flex rounded-full h-full w-full ${automationStatusColor}`}></span>
-                                </div>
-                            </button>
-                            <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 w-max bg-panel p-3 rounded-lg border border-border text-sm text-text-secondary shadow-lg opacity-0 invisible group-hover:visible group-hover:opacity-100 transition-all z-40 pointer-events-none">
-                                <h4 className="font-bold text-main mb-2 text-base">Automation Status</h4>
-                                <ul className="space-y-2">
-                                    {[
-                                        { label: 'Blog Posts', enabled: selectedSite.isAutomationEnabled, ready: automationReadiness.blog },
-                                        { label: 'Social Graphics', enabled: selectedSite.isSocialGraphicAutomationEnabled, ready: automationReadiness.socialGraphic },
-                                        { label: 'Social Videos', enabled: selectedSite.isSocialVideoAutomationEnabled, ready: automationReadiness.socialVideo },
-                                        { label: 'Email Marketing', enabled: selectedSite.isEmailMarketingAutomationEnabled, ready: automationReadiness.email },
-                                        { label: 'Live Production', enabled: selectedSite.liveBroadcastAutomation?.isEnabled, ready: automationReadiness.liveProduction },
-                                    ].map(item => {
-                                        let color = 'bg-gray-500';
-                                        let statusText = 'Disabled';
-                                        if (item.enabled) {
-                                            color = item.ready ? 'bg-green-500' : 'bg-yellow-500';
-                                            statusText = item.ready ? 'Ready' : 'Misconfigured';
-                                        }
-                                        return (
-                                            <li key={item.label} className="flex items-center justify-between gap-4">
-                                                <div className="flex items-center gap-3">
-                                                    <span className={`w-2.5 h-2.5 rounded-full ${color}`}></span>
-                                                    <span className="text-sm text-text-primary">{item.label}</span>
-                                                </div>
-                                                <span className="text-xs text-text-secondary font-medium">{statusText}</span>
-                                            </li>
-                                        );
-                                    })}
-                                </ul>
-                            </div>
-                        </div>
-                    )}
-                </div>
-                <button onClick={handleAddNewSite} className="w-full mt-3 btn btn-secondary text-xs py-1.5 flex items-center justify-center gap-2">
-                    <span className="text-lg font-light leading-none">+</span> New Site
-                </button>
-            </div>
-
-            <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-                {[
-                    { id: 'dashboard', label: 'Mission Control', icon: HomeIcon },
-                    { id: 'content', label: 'Content Hub', icon: DocumentTextIcon },
-                    { id: 'authority', label: 'Authority Suite', icon: LightbulbIcon, locked: !planAccess.canUseAuthority },
-                    { id: 'automation', label: 'Automation', icon: ClockIcon, locked: !planAccess.canUseBlogAutomation },
-                    { id: 'advertising', label: 'Advertising', icon: ChartBarIcon, locked: !planAccess.canUseAdvertising },
-                    { id: 'branding', label: 'Branding', icon: SparklesIcon },
-                    { id: 'connections', label: 'Connections', icon: LinkIcon },
-                    { id: 'analytics', label: 'Analytics', icon: ChartBarIcon, locked: !planAccess.canUseAnalytics },
-                    { id: 'api-spend', label: 'API & Spend', icon: KeyIcon, mt: true },
-                    { id: 'settings', label: 'Settings', icon: Cog6ToothIcon },
-                ].map((item) => (
-                    <button
-                        key={item.id}
-                        onClick={() => setActiveTab(item.id)}
-                        disabled={item.locked}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group relative ${
-                            activeTab === item.id 
-                                ? 'bg-brand-primary/10 text-brand-primary' 
-                                : item.locked 
-                                    ? 'text-tertiary cursor-not-allowed opacity-60' 
-                                    : 'text-sub hover:bg-bg-surface-highlight hover:text-main'
-                        } ${item.mt ? 'mt-6' : ''}`}
-                    >
-                        {activeTab === item.id && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-brand-primary rounded-r-full" />}
-                        <item.icon className={`h-5 w-5 flex-shrink-0 ${activeTab === item.id ? 'text-brand-primary' : 'text-sub group-hover:text-main'}`} />
-                        <span className="whitespace-nowrap opacity-100 md:opacity-0 lg:opacity-100 group-hover/sidebar:opacity-100 transition-opacity delay-75">{item.label}</span>
-                        {item.locked && (
-                            <span className="ml-auto text-[10px] uppercase font-bold text-tertiary border border-border px-1.5 rounded opacity-100 md:opacity-0 lg:opacity-100 group-hover/sidebar:opacity-100 transition-opacity">
-                                Lock
-                            </span>
-                        )}
-                    </button>
-                ))}
-            </nav>
-
-            <div className="p-4 border-t border-border bg-panel-solid">
-                <button 
-                    onClick={() => setIsProfileModalOpen(true)}
-                    className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-bg-surface-highlight transition-colors group text-left"
-                >
-                    <div className="h-9 w-9 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary font-bold text-sm border border-brand-primary/20 flex-shrink-0">
-                        {currentUser.firstName?.[0] || currentUser.email[0].toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0 opacity-100 md:opacity-0 lg:opacity-100 group-hover/sidebar:opacity-100 transition-opacity">
-                        <p className="text-sm font-medium text-main truncate">{currentUser.firstName || 'User'}</p>
-                        <div className={`text-[10px] px-1.5 py-0.5 rounded-full inline-block mt-0.5 font-bold uppercase tracking-wider border ${planPillClasses[planAccess.plan].replace('bg-', 'bg-opacity-20 ')}`}>
-                            {planAccess.plan}
-                        </div>
-                    </div>
-                </button>
-                <div className="flex items-center justify-between mt-3 opacity-100 md:opacity-0 lg:opacity-100 group-hover/sidebar:opacity-100 transition-opacity px-2">
-                     <button onClick={toggleTheme} className="p-1.5 text-sub hover:text-main hover:bg-panel-light rounded transition-colors" title="Toggle Theme">
-                        {theme === 'dark' ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
-                    </button>
-                    <button onClick={() => authService.signOut().then(() => window.location.reload())} className="p-1.5 text-sub hover:text-red-400 hover:bg-red-900/20 rounded transition-colors" title="Sign Out">
-                        <SignOutIcon className="h-4 w-4" />
-                    </button>
-                </div>
-            </div>
-        </div>
-      </aside>
-
-      {/* --- MAIN CONTENT --- */}
-      <div className="flex-1 flex flex-col min-w-0 bg-app h-full relative">
-        <header className="md:hidden h-16 bg-panel border-b border-border flex items-center justify-between px-4 flex-shrink-0 sticky top-0 z-20">
-            <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-2 text-sub hover:text-main"><MenuIcon className="h-6 w-6"/></button>
-            <span className="font-bold text-lg text-main truncate">{selectedSite?.name}</span>
-            <div className="w-9 h-9 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary font-bold border border-brand-primary/20">
-                {currentUser.firstName?.[0] || 'U'}
-            </div>
-        </header>
-
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth relative">
-            <div className="max-w-7xl mx-auto pb-20">
-                {isTrialBannerVisible && currentUser.trialEndsAt && currentUser.trialEndsAt > Date.now() && (
-                    <div className="mb-6 bg-gradient-to-r from-purple-900/40 to-blue-900/40 border border-purple-500/30 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-purple-500/20 rounded-lg text-purple-300">
-                                <SparklesIcon className="h-5 w-5" />
-                            </div>
-                            <div>
-                                <p className="font-bold text-white text-sm">Agency Plan Trial Active</p>
-                                <p className="text-xs text-purple-200/80 mt-0.5">You have {trialDaysLeft} days left to experience unlimited power.</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3 w-full sm:w-auto">
-                            <button onClick={() => setActiveTab('subscription')} className="btn btn-primary text-xs px-4 py-2 w-full sm:w-auto">Upgrade Now</button>
-                            <button onClick={() => setIsTrialBannerVisible(false)} className="p-1.5 text-purple-300/60 hover:text-white rounded-full"><XIcon className="h-4 w-4" /></button>
-                        </div>
-                    </div>
-                )}
-
-                <ActiveComponent 
-                    status={status}
-                    blogPost={blogPost}
-                    publishedPostUrl={publishedPostUrl}
-                    lastGeneratedSocialPosts={lastGeneratedSocialPosts}
-                    site={selectedSite!}
-                    sites={sites}
-                    resetGeneration={resetGeneration}
-                    handleConnectSocialMedia={handleConnectSocialMedia}
-                    isConnectingSocial={isConnectingSocial}
-                    handleBlogPostUpdate={handleBlogPostUpdate}
-                    seoScore={seoScore}
-                    statusMessage={statusMessage}
-                    handlePublish={handlePublish}
-                    isLoading={isLoading}
-                    activeTab={activeTab}
-                    activeSubTab={activeSubTab}
-                    setActiveTab={setActiveTab}
-                    generateAndScorePost={generateAndScorePost}
-                    handleReviewDraft={handleReviewDraft}
-                    handleSiteUpdate={handleSiteUpdate}
-                    handleMultipleSiteUpdates={handleMultipleSiteUpdates}
-                    setViewingHistoryItem={setViewingHistoryItem}
-                    logApiUsage={logApiUsage}
-                    handleResetAllSitesSpend={handleResetAllSitesSpend}
-                    handleOpenDeleteDialog={handleOpenDeleteDialog}
-                    handleVerifySocialMediaConnection={handleVerifySocialMediaConnection}
-                    handleVerifyCredentialBasedConnection={handleVerifyCredentialBasedConnection}
-                    onDiscardDraft={onDiscardDraft}
-                    onRefreshAnalytics={onRefreshAnalytics}
-                    onRefreshClarityData={onRefreshClarityData}
-                    currentUser={currentUser}
-                    handleUpdatePlan={handleUpdatePlan}
-                    planAccess={planAccess}
-                    onRefreshArticle={onRefreshArticle}
-                    originalArticleForDiff={originalArticleForDiff}
-                    refreshedArticleForDiff={refreshedArticleForDiff}
-                    handleVerifyMailchimp={handleVerifyMailchimp}
-                    handleVerifyClarity={handleVerifyClarity}
-                    handleVerifySupabase={handleVerifySupabaseConnection}
-                    handleVerifyPaystack={handleVerifyPaystackConnection}
-                    handleVerifyPayfast={handleVerifyPayfastConnection}
-                    handleVerifyWise={handleVerifyWiseConnection}
-                    handleVerifyPayoneer={handleVerifyPayoneerConnection}
-                    handleVerifyStripe={handleVerifyStripeConnection}
-                    handleVerifyPayPal={handleVerifyPayPalConnection}
-                />
-            </div>
-        </main>
-      </div>
-
-      {/* --- MODALS & OVERLAYS --- */}
+      
+      {selectedSite.isAssistantEnabled && (
+          <AssistantUI 
+              site={selectedSite} 
+              actions={{
+                  onFindNextTopic: () => {
+                      const topic = selectedSite.keywordList.split('\n').find(k => k.trim() && !k.trim().startsWith('[DONE]'));
+                      return topic || "No topics found in keyword list.";
+                  },
+                  onResearchKeyword: async (kw) => {
+                      try {
+                          const { suggestions } = await suggestKeywords(kw, selectedSite);
+                          return suggestions[0] || kw; 
+                      } catch(e) { return kw; }
+                  },
+                  onBrainstormAndAddTopics: async ({ query, count }) => {
+                      try {
+                          const { suggestions } = await suggestKeywords(query, selectedSite);
+                          const newTopics = suggestions.slice(0, count);
+                          handleSiteUpdate('keywordList', (selectedSite.keywordList + '\n' + newTopics.join('\n')).trim());
+                          return `Added ${newTopics.length} topics to the list.`;
+                      } catch(e: any) { return `Error: ${e.message}`; }
+                  },
+                  onGenerateArticle: async (topic) => {
+                      generateAndScorePost(topic, 'keyword', topic, selectedSite);
+                      return `Started generation for "${topic}". Check the main screen for progress.`;
+                  },
+                  onUpdateSiteField: (field, val) => {
+                      handleSiteUpdate(field, val);
+                      return `Updated ${field} to ${val}.`;
+                  },
+                  onRunSocialGraphicAutomation: async () => {
+                      setActiveTab('content', 'graphics');
+                      return "Opened Social Graphics tab.";
+                  },
+                  onRunSocialVideoAutomation: async () => {
+                      setActiveTab('content', 'video');
+                      return "Opened Social Video tab.";
+                  },
+                  onNavigateToTab: ({ tab, subTab }) => {
+                      const tabMap: Record<string, string> = { 'dashboard': 'dashboard', 'content hub': 'content', 'content': 'content', 'authority': 'authority', 'automation': 'automation', 'advertising': 'advertising', 'branding': 'branding', 'connections': 'connections', 'analytics': 'analytics', 'settings': 'settings' };
+                      const targetTab = tabMap[tab.toLowerCase()];
+                      if (targetTab) {
+                          setActiveTab(targetTab, subTab ? subTab.toLowerCase() : null);
+                          return `Navigated to ${tab}.`;
+                      }
+                      return `Tab "${tab}" not found.`;
+                  },
+                  onGetAutomationStatus: () => {
+                      const status = {
+                          isWordPressConnected: !!(selectedSite.wordpressUrl && selectedSite.wordpressUsername),
+                          hasContentSources: (selectedSite.keywordList.length > 0 || selectedSite.rssSources.length > 0),
+                          isAutomationEnabled: selectedSite.isAutomationEnabled,
+                          isSocialGraphicAutomationEnabled: selectedSite.isSocialGraphicAutomationEnabled,
+                          isSocialVideoAutomationEnabled: selectedSite.isSocialVideoAutomationEnabled,
+                      };
+                      return JSON.stringify(status);
+                  },
+                  onUpdateAutomationSetting: ({ settingName, settingValue }) => {
+                      let val: any = settingValue;
+                      if (settingValue === 'true') val = true;
+                      if (settingValue === 'false') val = false;
+                      handleSiteUpdate(settingName as keyof Site, val);
+                      return `Updated ${settingName} to ${val}.`;
+                  }
+              }} 
+          />
+      )}
+      
       <GlobalAutomationTracker 
           isOpen={isTrackerModalOpen} 
           onClose={() => setIsTrackerModalOpen(false)} 
-          sites={sites}
-          onActiveJobsChange={(hasJobs) => {
-              const badge = document.getElementById('tracker-badge');
-              if(badge) badge.style.display = hasJobs ? 'block' : 'none';
-          }}
-      />
-
-      <AssistantUI
-          site={selectedSite!}
-          actions={{
-              onFindNextTopic: () => {
-                  const next = selectedSite!.keywordList.split('\n').find(k => k.trim() && !k.trim().startsWith('[DONE]'));
-                  return next || "No topics found.";
-              },
-              onResearchKeyword: async (keyword) => {
-                  const { suggestions } = await suggestKeywords(keyword, selectedSite!);
-                  return suggestions[0] || keyword;
-              },
-              onBrainstormAndAddTopics: async ({ query, count }) => {
-                  const { suggestions } = await suggestKeywords(query, selectedSite!);
-                  const newTopics = suggestions.slice(0, count);
-                  const newList = selectedSite!.keywordList ? `${selectedSite!.keywordList}\n${newTopics.join('\n')}` : newTopics.join('\n');
-                  handleSiteUpdate('keywordList', newList);
-                  return `Added ${newTopics.length} new topics about "${query}".`;
-              },
-              onGenerateArticle: async (topic) => {
-                  generateAndScorePost(topic, 'keyword', topic, selectedSite!);
-                  return `Started generating article for "${topic}". Check the UI for progress.`;
-              },
-              onUpdateSiteField: (field, value) => {
-                  handleSiteUpdate(field, value);
-                  return `Updated ${String(field)} to ${value}.`;
-              },
-              onRunSocialGraphicAutomation: async () => {
-                  return "Social graphic automation triggered (simulation).";
-              },
-              onRunSocialVideoAutomation: async () => {
-                  return "Social video automation triggered (simulation).";
-              },
-              onNavigateToTab: ({ tab, subTab }) => {
-                  const tabIdMap: Record<string, string> = {
-                      'Dashboard': 'dashboard', 'Content Hub': 'content', 'Automation': 'automation',
-                      'Branding': 'branding', 'Connections': 'connections', 'Settings': 'settings'
-                  };
-                  const targetTab = tabIdMap[tab] || tab.toLowerCase();
-                  setActiveTab(targetTab, subTab ? subTab.toLowerCase() : null);
-                  return `Navigated to ${tab}.`;
-              },
-              onGetAutomationStatus: () => {
-                  return JSON.stringify({
-                      isWordPressConnected: !!(selectedSite!.wordpressUrl && selectedSite!.wordpressUsername),
-                      hasContentSources: selectedSite!.keywordList.length > 0 || selectedSite!.rssSources.length > 0,
-                      isBlogAutomationEnabled: selectedSite!.isAutomationEnabled,
-                      automationTrigger: selectedSite!.automationTrigger,
-                      blogSource: selectedSite!.automationTrigger === 'daily' ? selectedSite!.dailyGenerationSource : selectedSite!.scheduleGenerationSource,
-                      isSocialGraphicEnabled: selectedSite!.isSocialGraphicAutomationEnabled,
-                      isSocialVideoEnabled: selectedSite!.isSocialVideoAutomationEnabled
-                  });
-              },
-              onUpdateAutomationSetting: ({ settingName, settingValue }) => {
-                  let value = settingValue;
-                  if (value === 'true') value = true;
-                  if (value === 'false') value = false;
-                  handleSiteUpdate(settingName, value);
-                  return `Updated ${settingName} to ${value}.`;
+          sites={sites} 
+          onActiveJobsChange={(isActive) => {
+              if (isActive && !isTrackerModalOpen) {
+                  // Optional: auto-open or show toast
               }
           }}
       />
-
-      {isHelpGuideOpen && <HelpGuide onClose={() => setIsHelpGuideOpen(false)} />}
       
-      {/* Profile Modal */}
-      <ProfileModal 
-        isOpen={isProfileModalOpen}
-        onClose={() => setIsProfileModalOpen(false)}
-        currentUser={currentUser}
-        onUserUpdate={handleUserUpdate}
-        onSignOut={() => { handleSignOut(); setIsProfileModalOpen(false); }}
-        planAccess={planAccess}
-        onManageSubscription={handleManageSubscription}
-      />
-
-      {/* Viewing History Item Modal */}
-      {viewingHistoryItem && selectedSite && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in" onClick={() => setViewingHistoryItem(null)}>
-            <div className="bg-panel rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] border border-border flex flex-col animate-modal-pop" onClick={e => e.stopPropagation()}>
-                <header className="p-4 border-b border-border flex justify-between items-center bg-panel-solid rounded-t-xl">
-                    <h2 className="font-bold text-main text-lg flex items-center gap-2">
-                        <DocumentTextIcon className="h-5 w-5 text-brand-primary"/>
-                        Post Details
-                    </h2>
-                    <button onClick={() => setViewingHistoryItem(null)} className="p-2 text-sub hover:text-main rounded-full hover:bg-panel-light transition-colors"><XIcon className="h-6 w-6"/></button>
-                </header>
-                <div className="flex-1 overflow-y-auto p-6">
-                    <HistoryDetailViewer post={viewingHistoryItem} site={selectedSite} />
-                </div>
-            </div>
-        </div>
+      {viewingHistoryItem && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in" onClick={() => setViewingHistoryItem(null)}>
+              <div className="bg-panel rounded-xl shadow-2xl w-full max-w-4xl border border-border animate-modal-pop max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                  <div className="p-6">
+                      <div className="flex justify-between items-start mb-6">
+                          <h2 className="text-2xl font-bold text-main">History Details</h2>
+                          <button onClick={() => setViewingHistoryItem(null)} className="p-2 text-text-secondary hover:text-main rounded-full bg-panel-light hover:bg-bg-surface-highlight transition-colors"><XIcon className="h-6 w-6" /></button>
+                      </div>
+                      <HistoryDetailViewer post={viewingHistoryItem} site={selectedSite} />
+                  </div>
+              </div>
+          </div>
       )}
-      
-      {/* Delete Confirmation Modal */}
-      {isDeleteDialogOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-            <div className="bg-panel rounded-xl shadow-2xl w-full max-w-md p-6 border border-red-500/50 animate-modal-pop">
-                <div className="flex items-start gap-4">
-                    <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-900/50 sm:mx-0 sm:h-10 sm:w-10"><ExclamationTriangleIcon className="h-6 w-6 text-red-400" /></div>
-                    <div className="mt-0 text-left flex-1">
-                        <h3 className="text-lg font-bold text-main">Delete Site</h3>
-                        <div className="text-sm text-sub mt-2">
-                            <p>This will permanently delete <strong className="text-red-300">{selectedSite?.name}</strong> and all its data.</p>
-                            <p className="mt-2">This action is irreversible. To proceed, please type the site name below.</p>
-                        </div>
-                        <input type="text" value={deleteConfirmationInput} onChange={e => setDeleteConfirmationInput(e.target.value)} className="input-base mt-4 px-3 py-2 w-full" placeholder={selectedSite?.name} />
-                    </div>
-                </div>
-                <div className="mt-6 flex flex-row-reverse gap-3">
-                    <button type="button" className="w-full sm:w-auto btn bg-red-600 hover:bg-red-700 text-white disabled:opacity-50" onClick={handleDeleteSite} disabled={deleteConfirmationInput !== selectedSite?.name}>Delete</button>
-                    <button type="button" className="w-full sm:w-auto btn btn-secondary" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</button>
-                </div>
-            </div>
-        </div>
-      )}
-      
-      {/* Automation Tracker FAB (only if jobs running) */}
-      <button 
-        onClick={() => setIsTrackerModalOpen(true)}
-        className="fixed bottom-6 left-6 z-40 bg-panel border border-border p-3 rounded-full shadow-xl hover:scale-105 transition-transform group"
-        title="View Active Automations"
-      >
-        <div id="tracker-badge" className="absolute top-0 right-0 w-3 h-3 bg-brand-primary rounded-full hidden"></div>
-        <ClockIcon className="h-6 w-6 text-brand-primary group-hover:animate-spin" />
-      </button>
-
-    </div>
+    </Layout>
   );
 };

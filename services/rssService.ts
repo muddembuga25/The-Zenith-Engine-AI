@@ -45,14 +45,15 @@ export const fetchAndParseRssFeed = async (url: string): Promise<RssFeedResult> 
     if (!url.trim()) throw new Error("RSS Feed URL cannot be empty.");
     
     try {
-        const res = await fetch(`${API_BASE}/proxy-request`, {
+        // Use specific RSS endpoint
+        const res = await fetch(`${API_BASE}/rss/fetch`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url, method: 'GET' })
+            body: JSON.stringify({ url })
         });
 
         const data = await res.json();
-        if (!data.success) throw new Error(data.error || 'Failed to fetch RSS feed via proxy');
+        if (!data.success) throw new Error(data.error || 'Failed to fetch RSS feed');
 
         const text = typeof data.data === 'string' ? data.data : JSON.stringify(data.data);
         return parseXmlRegex(text);

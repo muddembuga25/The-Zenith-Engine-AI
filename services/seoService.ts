@@ -1,3 +1,4 @@
+
 import type { Site, BlogPost, SeoChecklist, SeoScoreResult, StrategicBrief } from '../types';
 
 // Helper to get word count from HTML content
@@ -43,7 +44,7 @@ export const calculateSeoScore = (post: BlogPost, brief: StrategicBrief, site: S
     const lowerCaseKeyword = brief.focusKeyword.toLowerCase();
     const contentText = post.content.replace(/<[^>]*>/g, ' ').toLowerCase();
 
-    // === On-Page Basics (25 points) ===
+    // === GEO Essentials (25 points) ===
     if (post.seoTitle.length >= 50 && post.seoTitle.length <= 60) { checks.titleLength = true; score += 4; }
     if (post.metaDescription.length >= 120 && post.metaDescription.length <= 155) { checks.metaDescriptionLength = true; score += 4; }
     if (post.seoTitle.toLowerCase().includes(lowerCaseKeyword)) { checks.keywordInTitle = true; score += 5; }
@@ -55,7 +56,7 @@ export const calculateSeoScore = (post: BlogPost, brief: StrategicBrief, site: S
         score += 4;
     }
 
-    // === Semantic & Topical Authority (10 points) ===
+    // === Entity & Authority (10 points) ===
     if (brief.keyEntities && brief.keyEntities.length > 0) {
         const entitiesFound = brief.keyEntities.filter(entity => contentText.includes(entity.toLowerCase()));
         const coverage = entitiesFound.length / brief.keyEntities.length;
@@ -122,7 +123,7 @@ export const calculateSeoScore = (post: BlogPost, brief: StrategicBrief, site: S
     if (post.content.toLowerCase().includes('<h2>frequently asked questions</h2>')) { checks.faqSection = true; score += 5; }
     if (post.content.toLowerCase().includes('<iframe')) { checks.videoEmbed = true; score += 5; }
 
-    // === Authority & Trust (E-E-A-T) (25 points) ===
+    // === Trust & Citations (E-E-A-T) (25 points) ===
     const linkRegex = /<a\s+.*?href=["'](.*?)["']/g;
     let linkMatch;
     let internalLinkCount = 0;

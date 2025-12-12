@@ -1,3 +1,4 @@
+
 export const FeaturesMarkdown = `
 # Zenith Engine AI: Application Features
 
@@ -5,14 +6,14 @@ This document provides a comprehensive overview of the features available in the
 
 ## 1. Core Functionality: AI Content Generation
 
-The heart of the application is a sophisticated, multi-step pipeline for generating high-quality, SEO-optimized content.
+The heart of the application is a sophisticated, multi-step pipeline for generating high-quality, GEO-optimized (Generative Engine Optimization) content.
 
 ### Multi-Step Generation Process
-1.  **Keyword Discovery**: The AI analyzes a topic to discover the best high-intent, long-tail keyword using real-time search data or a specialized SEO API (DataForSEO).
-2.  **Strategic Brief Creation**: The AI acts as an SEO strategist, analyzing the chosen keyword and top competitors to produce a detailed brief. This includes a unique content angle, SEO-optimized titles, a meta description, a URL slug, and an image prompt.
-3.  **Article Writing**: Using the brief, the AI writes a full-length blog post in HTML format, complete with headings, lists, and other elements for readability. It intelligently incorporates internal and external links, an FAQ section, and structured schema markup for rich search results.
+1.  **Keyword Discovery**: The AI analyzes a topic to discover the best high-intent, long-tail keyword using real-time search data or a specialized API (DataForSEO).
+2.  **Strategic Brief Creation**: The AI acts as a GEO strategist, analyzing the chosen keyword and top competitors to produce a detailed brief. This includes a unique content angle, GEO-optimized titles, a meta description, a URL slug, and an image prompt.
+3.  **Article Writing**: Using the brief, the AI writes a full-length blog post in HTML format, complete with headings, lists, and other elements for readability. It intelligently incorporates internal and external links, an FAQ section, and structured schema markup for rich results in LLM answers.
 4.  **Featured Image Generation**: The AI generates a unique, high-quality featured image based on the brief's image prompt, with customizable aspect ratios.
-5.  **Self-Correction SEO Loop**: To ensure optimal quality, the app employs a "Self-Correction SEO Loop". It audits the generated content against an SEO checklist, identifies any weaknesses, and then prompts the AI to make surgical edits to fix them, improving the SEO score before publishing.
+5.  **Self-Correction GEO Loop**: To ensure optimal quality, the app employs a "Self-Correction GEO Loop". It audits the generated content against a GEO checklist, identifies any weaknesses in entity coverage or structure, and then prompts the AI to make surgical edits to fix them, improving the GEO score before publishing.
 
 ### Diverse Content Sources
 Users can initiate the generation process from multiple sources:
@@ -75,11 +76,11 @@ Measure your content's impact and inform your strategy with data.
 
 ## 6. Authority & SEO Toolkit
 
-Build your site's authority and monitor its SEO health.
+Build your site's authority and monitor its GEO health.
 
 -   **AI Commenting Assistant**: Find relevant, non-competitor blogs related to your published posts and use the AI to generate thoughtful, value-driven comments to build relationships and authority.
 -   **Backlink Monitoring**: Add your acquired backlinks to a monitoring list. The app can periodically check if the links are still live and active, alerting you to "inactive" or "not_found" links.
--   **Advanced SEO Data**: Optionally integrate with **DataForSEO** to use their API for highly accurate keyword research and SERP analysis, supplementing the AI's built-in search capabilities.
+-   **Advanced GEO Data**: Optionally integrate with **DataForSEO** to use their API for highly accurate keyword research and SERP analysis, supplementing the AI's built-in capabilities.
 
 ## 7. AI Agent
 

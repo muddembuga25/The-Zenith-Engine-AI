@@ -1,5 +1,8 @@
 {
   "name": "Zenith Engine AI",
-  "description": "An AI-powered application to generate and publish fully SEO-optimized blog posts directly to your WordPress site. Simply provide a topic, and let the AI handle keyword research, content creation, and image generation.",
-  "requestFramePermissions": []
+  "description": "An AI-powered application for Generative Engine Optimization (GEO). Generate and publish fully optimized blog posts directly to your WordPress site.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
 }

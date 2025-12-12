@@ -48,40 +48,40 @@ export const SEOScore: React.FC<SEOScoreProps> = ({ score, checklist }) => {
   const data = [{ name: 'score', value: score }];
 
   const checklistItems = [
-      { section: "On-Page Basics", items: [
+      { section: "GEO Essentials", items: [
           { label: "Optimal title length (50-60 chars)", checked: checklist.titleLength },
           { label: "Meta description length (120-155 chars)", checked: checklist.metaDescriptionLength },
-          { label: "Keyword in SEO Title", checked: checklist.keywordInTitle },
-          { label: "Keyword in Meta Description", checked: checklist.keywordInMetaDescription },
-          { label: "Keyword in URL Slug", checked: checklist.keywordInSlug },
-          { label: "Keyword in introduction", checked: checklist.keywordInIntroduction },
+          { label: "Natural Language Optimization (Title)", checked: checklist.keywordInTitle },
+          { label: "Contextual Description (Meta)", checked: checklist.keywordInMetaDescription },
+          { label: "Clean URL Slug", checked: checklist.keywordInSlug },
+          { label: "Direct Answer Introduction", checked: checklist.keywordInIntroduction },
       ]},
-      { section: "Semantic & Topical Authority", items: [
-          { label: "Covers key entities and concepts", checked: checklist.entityCoverage },
-          { label: "Achieves sufficient topical depth", checked: checklist.topicalDepth },
+      { section: "Entity & Authority", items: [
+          { label: "Entity & Concept Coverage (GEO)", checked: checklist.entityCoverage },
+          { label: "Topical Depth & Nuance", checked: checklist.topicalDepth },
       ]},
       { section: "Content Quality", items: [
-          { label: "Sufficient content length (>300 words)", checked: checklist.contentLength },
-          { label: "Good keyword density (0.5-1.5%)", checked: checklist.keywordDensity },
-          { label: "Keyword in at least one heading", checked: checklist.keywordInHeading },
-          { label: "Sufficient H2 headings (2+)", checked: checklist.sufficientHeadings },
-          { label: "Content is easy to read", checked: checklist.readability },
-          { label: "Image has optimized alt text", checked: checklist.imageAltText },
-          { label: "Includes an FAQ section", checked: checklist.faqSection },
-          { label: "Includes embedded video content", checked: checklist.videoEmbed },
+          { label: "In-depth content (>300 words)", checked: checklist.contentLength },
+          { label: "Natural keyword usage (0.5-1.5%)", checked: checklist.keywordDensity },
+          { label: "Structured Headings (H2/H3)", checked: checklist.keywordInHeading },
+          { label: "Sufficient Sub-topics (2+)", checked: checklist.sufficientHeadings },
+          { label: "Readability & Flow", checked: checklist.readability },
+          { label: "Descriptive Image Alt Text", checked: checklist.imageAltText },
+          { label: "Q&A Format (FAQ Section)", checked: checklist.faqSection },
+          { label: "Rich Media (Video Embed)", checked: checklist.videoEmbed },
       ]},
-      { section: "Authority & Trust (E-E-A-T)", items: [
-          { label: "Contextual internal links (2+)", checked: checklist.internalLinks },
-          { label: "Authoritative external links (2+)", checked: checklist.externalLinks },
-          { label: "Mentions the author's name", checked: checklist.authorMention },
-          { label: "Includes 'About the Author' section", checked: checklist.aboutAuthorSection },
-          { label: "Includes valid Schema Markup", checked: checklist.schemaMarkup },
+      { section: "Trust & Citations (E-E-A-T)", items: [
+          { label: "Internal Citation Structure (2+)", checked: checklist.internalLinks },
+          { label: "Authoritative External Citations (2+)", checked: checklist.externalLinks },
+          { label: "Author Credibility (Byline)", checked: checklist.authorMention },
+          { label: "Author Bio Section", checked: checklist.aboutAuthorSection },
+          { label: "Structured Data (Schema Markup)", checked: checklist.schemaMarkup },
       ]},
   ];
 
   return (
     <div className="w-full">
-        <h3 className="text-xl font-bold mb-4 border-b border-border pb-2 text-blue-300">SEO Analysis</h3>
+        <h3 className="text-xl font-bold mb-4 border-b border-border pb-2 text-blue-300">GEO Analysis</h3>
       <div className="relative w-40 h-40 mx-auto my-4">
         <ResponsiveContainer width="100%" height="100%">
           <RadialBarChart
@@ -112,7 +112,7 @@ export const SEOScore: React.FC<SEOScoreProps> = ({ score, checklist }) => {
           </span>
         </div>
       </div>
-      <p className="text-center font-semibold text-lg mt-1 mb-6 text-text-primary">Overall Score</p>
+      <p className="text-center font-semibold text-lg mt-1 mb-6 text-text-primary">GEO Score</p>
       
       <div className="space-y-4">
         {checklistItems.map((section, sectionIndex) => (

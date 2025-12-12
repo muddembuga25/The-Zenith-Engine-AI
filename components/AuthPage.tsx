@@ -149,19 +149,20 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess, theme, toggle
                             <LogoIcon className="h-16 w-16 text-brand-primary" />
                         </div>
                         <h1 className="text-5xl font-bold text-main leading-tight tracking-tight mb-6">
-                            Autonomous Content <br/>
-                            <span className="text-brand-primary text-glow">Engineering.</span>
+                            GENERATIVE <br/>
+                            ENGINE <br/>
+                            <span className="text-brand-primary text-glow">OPTIMIZATION.</span>
                         </h1>
                         <p className="text-lg text-sub mb-12 leading-relaxed">
-                            Zenith Engine AI isn't just a tool; it's your entire content team in code. Generate, optimize, and publish with precision.
+                            Dominate the new search landscape. Zenith Engine AI helps you master Generative Engine Optimization (GEO) to rank in AI answers.
                         </p>
                         
                         <div className="grid gap-6">
                             <div className="flex items-start gap-4 p-4 rounded-xl border border-border bg-panel/50 hover:border-brand-primary/30 transition-colors">
                                 <div className="p-2 bg-brand-primary/10 rounded-lg text-brand-primary"><SparklesIcon className="h-6 w-6" /></div>
                                 <div>
-                                    <h3 className="font-semibold text-main">AI-Driven SEO</h3>
-                                    <p className="text-sm text-sub mt-1">Strategic keyword analysis and optimized content generation.</p>
+                                    <h3 className="font-semibold text-main">AI-Driven GEO</h3>
+                                    <p className="text-sm text-sub mt-1">Strategic entity analysis and optimization for LLM discovery.</p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-4 p-4 rounded-xl border border-border bg-panel/50 hover:border-brand-primary/30 transition-colors">

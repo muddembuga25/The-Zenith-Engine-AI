@@ -96,7 +96,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({ activeTab, activeSubTab, s
             else if (generationSource === 'video') initialTopic = sourceDetails.item.title;
             else if (generationSource === 'google_sheet') initialTopic = sourceDetails.item;
 
-            setStatusMessage('Performing competitive analysis...');
+            setStatusMessage('Analyzing Generative Engine landscape...');
             const { brief, costs: briefCosts } = await aiService.generateStrategicBriefFromKeyword(initialTopic, site);
             setStrategicBrief(brief);
             for (const provider in briefCosts) { logApiUsage(provider as any, (briefCosts as any)[provider] || 0); }
@@ -125,7 +125,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({ activeTab, activeSubTab, s
             let fullPost: BlogPost = { ...postData, content: validatedContent1, imageUrl: `data:image/jpeg;base64,${base64Image}` };
             
             setStatus(AppStatus.CORRECTING_SEO);
-            setStatusMessage('Auto-correcting SEO...');
+            setStatusMessage('Auto-correcting for GEO...');
             const { score: initialScore, checklist: initialChecklist } = calculateSeoScore(fullPost, brief, site);
             if (initialScore < 100) {
                 const { correctedHtml, cost: correctionCost, provider: correctionProvider } = await aiService.correctSeoIssues(fullPost.content, initialChecklist, brief, site);
