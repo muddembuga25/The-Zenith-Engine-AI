@@ -1,5 +1,4 @@
 
-
 import { supabase, supabaseRead } from './supabaseClient';
 import type { Site, User, GlobalSettings } from '../types';
 
@@ -11,7 +10,7 @@ export const storageService = {
   // --- SITE MANAGEMENT (Supabase Source of Truth) ---
 
   loadSitesAndLastId: async (user: User): Promise<{ sites: Site[]; lastSelectedId: string | null }> => {
-    if (!user) return { sites: [], lastSelectedId: null };
+    if (!user || !supabaseRead) return { sites: [], lastSelectedId: null };
 
     // Fetch sites from Supabase using READ client
     const { data, error } = await supabaseRead
@@ -39,6 +38,7 @@ export const storageService = {
   },
 
   getSites: async (userId: string): Promise<Site[]> => {
+      if (!supabaseRead) return [];
       // Use READ client for fetching sites
       const { data, error } = await supabaseRead
         .from('sites')
@@ -50,7 +50,7 @@ export const storageService = {
   },
 
   saveSites: async (sites: Site[], user: User) => {
-    if (!user || sites.length === 0) return;
+    if (!user || sites.length === 0 || !supabase) return;
     
     // Upsert sites to Supabase using WRITE client
     const upsertData = sites.map(site => ({
@@ -71,6 +71,7 @@ export const storageService = {
   saveAllSites: async (userId: string, sites: Site[]) => {
       // Used by automation worker (Node.js context)
       // Use WRITE client
+      if (!supabase) return;
       const upsertData = sites.map(site => ({
           id: site.id,
           owner_id: userId,
@@ -84,6 +85,7 @@ export const storageService = {
   },
 
   saveLastSelectedSiteId: async (userId: string, siteId: string) => {
+    if (!supabase) return;
     // 1. Reset selection for this user (Write)
     const { error: resetError } = await supabase
         .from('sites')
@@ -102,7 +104,7 @@ export const storageService = {
   },
 
   clearAllSitesData: async (user: User) => {
-      if (!user) return;
+      if (!user || !supabase) return;
       // Write operation
       const { error } = await supabase.from('sites').delete().eq('owner_id', user.uid);
       if (error) console.error("Error clearing sites remotely:", error);
@@ -111,6 +113,7 @@ export const storageService = {
   // --- MIGRATION UTILITY ---
   // Can be called to push local data to Supabase if transitioning existing users
   migrateGuestDataToUser: async (user: User) => {
+      if (!supabaseRead) return;
       try {
           const localSitesJson = localStorage.getItem(`zenith_sites_${user.uid}`);
           if (localSitesJson) {

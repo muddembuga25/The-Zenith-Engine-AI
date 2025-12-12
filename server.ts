@@ -2,6 +2,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
 import { GoogleGenAI } from '@google/genai';
@@ -279,15 +280,28 @@ app.post('/api/generate-content', async (req, res) => {
 });
 
 // Serve Frontend
-let distPath = path.join(__dirname, 'dist');
-import fs from 'fs';
-if (!fs.existsSync(distPath)) {
-    if (fs.existsSync(path.join((process as any).cwd(), 'dist'))) {
-        distPath = path.join((process as any).cwd(), 'dist');
+// Determine path to dist folder robustly for both local and Docker environments
+const possibleDistPaths = [
+    path.join(__dirname, 'dist'),
+    path.join((process as any).cwd(), 'dist'),
+    path.join('/app', 'dist') // Docker specific
+];
+
+let distPath = '';
+for (const p of possibleDistPaths) {
+    if (fs.existsSync(p)) {
+        distPath = p;
+        break;
     }
 }
-app.use(express.static(distPath));
-app.get('*', (req, res) => { res.sendFile(path.join(distPath, 'index.html')); });
+
+if (!distPath) {
+    console.warn("WARNING: 'dist' directory not found. Frontend will not be served.");
+} else {
+    console.log(`Serving frontend from: ${distPath}`);
+    app.use(express.static(distPath));
+    app.get('*', (req, res) => { res.sendFile(path.join(distPath, 'index.html')); });
+}
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

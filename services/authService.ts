@@ -19,7 +19,12 @@ const mapSupabaseUserToAppUser = (sbUser: any, profile: any): User => {
     };
 };
 
+const checkSupabase = () => {
+    if (!supabase) throw new Error("Backend not configured. Check SUPABASE_URL and SUPABASE_ANON_KEY.");
+};
+
 export const signIn = async (email: string, password: string): Promise<User> => {
+    checkSupabase();
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
     if (!data.user) throw new Error("No user returned from Supabase");
@@ -40,6 +45,7 @@ export const signIn = async (email: string, password: string): Promise<User> => 
 };
 
 export const signUp = async (email: string, password: string, username: string, firstName: string, lastName: string, plan: any, cycle: any, isAdmin: boolean = false): Promise<User> => {
+    checkSupabase();
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -76,6 +82,7 @@ export const signUp = async (email: string, password: string, username: string, 
 };
 
 export const signInWithGoogle = async (): Promise<User> => {
+    checkSupabase();
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -89,6 +96,7 @@ export const signInWithGoogle = async (): Promise<User> => {
 };
 
 export const signOut = async () => {
+    if (!supabase) return;
     const { error } = await supabase.auth.signOut();
     if (error) console.error("Error signing out:", error);
     
@@ -97,6 +105,11 @@ export const signOut = async () => {
 };
 
 export const getCurrentUser = async (): Promise<{ user: User | null; impersonatingAdmin: User | null }> => {
+    if (!supabase) {
+        // Backend not configured, cannot verify user.
+        return { user: null, impersonatingAdmin: null };
+    }
+
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
     if (sessionError) {
@@ -132,6 +145,7 @@ export const getCurrentUser = async (): Promise<{ user: User | null; impersonati
 };
 
 export const hasAdmin = async (): Promise<boolean> => {
+    if (!supabase) return false;
     const { count, error } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
@@ -145,6 +159,7 @@ export const hasAdmin = async (): Promise<boolean> => {
 };
 
 export const getAllUsers = async (): Promise<User[]> => {
+    checkSupabase();
     const { data: profiles, error } = await supabase.from('profiles').select('*');
     if (error) throw error;
     if (!profiles) return [];
@@ -164,6 +179,7 @@ export const getAllUsers = async (): Promise<User[]> => {
 };
 
 export const updateUser = async (email: string, updates: Partial<User>): Promise<User> => {
+    checkSupabase();
     const { data: profile } = await supabase.from('profiles').select('id').eq('email', email).single();
     
     if (!profile) throw new Error("User not found.");
@@ -198,6 +214,7 @@ export const updateUser = async (email: string, updates: Partial<User>): Promise
 };
 
 export const deleteUser = async (email: string) => {
+    checkSupabase();
     const { error } = await supabase.from('profiles').delete().eq('email', email);
     if (error) throw error;
 };
@@ -212,6 +229,7 @@ export const endImpersonation = (): User | null => {
 };
 
 export const updateUserProfile = async (uid: string, data: Partial<User>): Promise<User> => {
+    checkSupabase();
     const dbUpdates: any = {};
     if (data.firstName) dbUpdates.first_name = data.firstName;
     if (data.lastName) dbUpdates.last_name = data.lastName;
@@ -237,6 +255,7 @@ export const updateUserProfile = async (uid: string, data: Partial<User>): Promi
 };
 
 export const changePassword = async (current: string, newPass: string): Promise<void> => {
+    checkSupabase();
     const { error } = await supabase.auth.updateUser({ password: newPass });
     if (error) throw error;
 };
